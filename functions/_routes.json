@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": [
+    "/sw.js",
+    "/workbox-*",
+    "/registerSW.js",
+    "/manifest.webmanifest",
+    "/assets/*",
+    "/favicon.svg",
+    "/icon-*.png",
+    "/icon-maskable.svg",
+    "/_routes.json"
+  ]
+}
