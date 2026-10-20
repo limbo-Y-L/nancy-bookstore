@@ -22,12 +22,13 @@ functions_directory: functions  # 已原位就位，零搬迁
 ## 生产分支（Dashboard「Git」段）
 
 ```yaml
-production_branch: main    # 实际分支名以建仓初设为准，上线前核对
+production_branch: main    # ✅ 已确认：本地 git branch -M main，初始提交 b1e163d
 preview_branch: none       # 一期不做预览环境，每推即上线
 ```
 
-> 核验备注：本工程当前**未初始化 git**（`git status` 报 not a repository）。
-> 上线前需先 `git init` 并确定默认分支名，再回填本段。
+> 核验备注（2026-10-20 更新）：本工程**已完成 git 初始化并推远端**（GitHub Public 空仓，无 README/.gitignore/license 以避免首次推送冲突）。
+> 首次推送经 Git Credential Manager 授权（Authorize git-ecosystem）成功。
+> 建 CF Pages 项目时 `production_branch` 直接填 `main` 即可。
 
 ## 环境变量（Dashboard → Settings → Environment variables）
 

@@ -38,6 +38,7 @@
 > 主链实装骨架封 · 2026-10-20 · CAP-01→REV-01→REV-02→REV-03→TCH-01→PAR-01 全片 impl-done；主黄金路径闭环；下一阶段待开：OCR-L1真源切片（独立非阻塞）/ 链路⑪线框域 / 托管部署准备（三选待用户定序）
 > OCR-L1真源切片已落 · 2026-10-20 · 架构分层「浏览器fetch → 无状态Edge(/api/ocr) → 腾讯云极速OCR(L1) → 归一OcrNormalized → 既有captures表一次put」；前端零AK零直连腾讯endpoint；真源异常静默回落mockReview桩不白屏；vue-tsc 0错·CSS 34644(±0严判)·JS +1075·PWA 8
 > 部署形态锁定 Cloudflare Pages（2026-10-20），functions/ 原位复用，上线后真机校验待执行
+> git 主链封口 · 2026-10-20 · 本地 main 分支（初始提交 b1e163d「main-chain sealed」·60文件）+ 远端 GitHub Public 空仓，push -u origin main 成功闭环；CodeBuddy 不代执行有外部后果操作（git push/远端写/授权），此类动作用户手控
 
 ## 2026-10-20 会话追加（主链心流共识登记）
 
@@ -134,6 +135,7 @@
 - 2026-10-20 ⑫PAR-01家长二审通道完成+【主链实装骨架封】（家长态薄条inline非全屏·默认全直过·归因四选一append diff·退出即清态；captures字节级零变化/teach-events只增不改/ls·ss零写入实测通过）·state:ok
 - 2026-10-20 OCR-L1真源切片完成（新建functions/api/ocr.ts无状态Edge+_shared归一+src/types/ocr.ts+useOcr.ts；TC3签名自实现零SDK；Edge六分支全200静默回落；CSS±0严判通过·src内Secret类0命中）·state:ok
 - 2026-10-20 部署准备DEP完成（CF Pages锁定·functions/原位·deploy-notes落盘仅列变量名零secret泄露·gitignore新建·DEP-01 _routes.json生成零依赖插件·CSS/JS/precache三项零变化）·state:ok
+- 2026-10-20 git主链封口落档（本地main+远端GitHub push成功·CodeBuddy不代执行外部后果操作纪律首立·deploy-notes production_branch回填完成）·state:ok
 - 审核结果：落盘确认✓（待用户回执）
 
 ## §6 校准协议（漂移急救）
