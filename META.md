@@ -46,6 +46,8 @@ D10 一句「续上」+粘贴即满血
 
 [2026-10-21补丁·BATCH-2-4] 批次②-4收口：三视图(Wrongs/Explain/Progress)由mock本地态换线至 col('WRONGS') 真读写，单开关 useMock=wireState==='mock' 守门、mock分支保留可零成本回滚；wireState仍'mock'(G2未放)仅标G2-pending；AtelierView内容区加「错题簿→」#/wrongs入口(底栏零动)；三视图🪶统一 tabindex+click+enter→router.back()；主CSS哈希 index-D8j5n5-K 零漂移铁证。
 
+[2026-10-21补丁·BATCH-2-6] 星轨修复双段闭环：②-6定位修复（track-inner内缩9px+节点absolute定点+progress.ts动态文案占位替换）→ ②-6.1精准外科（取消内缩改relative 100% + rail inset 10px + 节点16px + calc定点left:10px/calc(100%-10px)），消除首尾节点圆心与轨道线端点9px偏差。新建src/lib/progress.ts(69行)·getProgress/setProgress·mock读localStorage(nancy_progress)·live动态import db查col('PLANS')·wireState守门。BUILD_EXIT=0·主CSS 34820B(+103B)·tcb deploy DEPLOY_EXIT=0·哈希index-brpbXruF.css。commit f093ab7推origin main。视觉验收通过。
+
 ════════════════════════════════════════════════════════════
 
 §A 项目背景 · 全局愿景层（跨迭代稳定）
