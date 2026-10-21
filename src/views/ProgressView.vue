@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import FoxHint from '../components/FoxHint.vue'
+import { useRouter } from 'vue-router'
+import { col } from '@/lib/db'
+import { wireState } from '@/lib/llm'
 
 interface MockWrong {
   id: string
@@ -16,8 +19,29 @@ const mockWrongs: MockWrong[] = [
   { id: 'm2', wrongType: '语文', tags: ['错别字'], source: '听写', ts: Date.now() - 3600000 }
 ]
 
+// 单开关：全三页共用；mock 走本地镜像，real 走 col('WRONGS').get() 聚合
+const useMock = wireState === 'mock'
+const cloudWrongs = ref<MockWrong[]>([])
+const router = useRouter()
+
+onMounted(async () => {
+  if (!useMock) {
+    const res = await col('WRONGS').get()
+    cloudWrongs.value = (res.data as Array<{ _id: string; wrongType: string; source: string; createdAt: string }>).map(d => ({
+      id: d._id,
+      wrongType: d.wrongType,
+      tags: [],
+      source: d.source,
+      ts: new Date(d.createdAt).getTime()
+    }))
+  }
+})
+
+// 数据源按开关切换：mock→本地镜像，real→CloudBase 拉取
+const source = computed<MockWrong[]>(() => (useMock ? mockWrongs : cloudWrongs.value))
+
 const stats = computed(() =>
-  mockWrongs.reduce(
+  source.value.reduce(
     (acc, w) => {
       acc[w.wrongType] = (acc[w.wrongType] ?? 0) + 1
       return acc
@@ -26,14 +50,15 @@ const stats = computed(() =>
   )
 )
 
-const total = computed(() => mockWrongs.length)
+const total = computed(() => source.value.length)
 
 // 纯本地日期标签，不引 dayjs / 不引新包
 const dayLabel = (ts: number) => new Date(ts).toLocaleDateString('zh-CN')
 
-const since = computed(() =>
-  mockWrongs[0]?.ts ? dayLabel(mockWrongs[0].ts) : '尚无记录'
-)
+const since = computed(() => {
+  const first = source.value[0]
+  return first?.ts ? dayLabel(first.ts) : '尚无记录'
+})
 </script>
 
 <template>
@@ -67,8 +92,8 @@ const since = computed(() =>
     <!-- 次行小字（--color-ink-faint） -->
     <p class="sub">共 {{ total }} 道 · 最早记录 {{ since }}</p>
 
-    <!-- 底部羽毛标记：本包不绑 click（可点留②-4末，与 ExplainView 同律） -->
-    <div class="foot-mark" aria-hidden="true">🪶</div>
+    <!-- 底部羽毛标记：🪶 统一返回（tabindex+click+enter，图标不改） -->
+    <div class="foot-mark" tabindex="0" role="button" aria-label="返回" @click="router.back()" @keydown.enter="router.back()">🪶</div>
   </div>
 </template>
 

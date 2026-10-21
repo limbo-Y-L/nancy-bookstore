@@ -7,4 +7,6 @@ export async function callLLM(_prompt: string, _opts?: { model?: string }): Prom
 }
 
 export type LLMWireState = 'mock' | 'armed' | 'live'
+// G2-pending：真 LLM wire 待 G2 放出后在此接管 callLLM 并置 wireState='live'；
+// 批次②-4末换线：三视图 useMock = wireState==='mock' 守门，col('WRONGS') 真读写路径已就位，本包不改字面量。
 export const wireState: LLMWireState = 'mock'

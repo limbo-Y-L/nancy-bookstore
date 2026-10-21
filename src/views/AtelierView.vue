@@ -52,6 +52,9 @@ const foxHints = [
         <span>{{ foxHints[2] }}</span>
       </FoxHint>
     </div>
+
+    <!-- 跨域入口：妙语工坊 → 错题簿（内容区可动域，底栏零动；样式走 inline 以免动主CSS哈希） -->
+    <a class="cross-link" href="#/wrongs" style="align-self:flex-start;margin-top:var(--space-1);font-size:var(--font-sm);color:var(--color-ink-soft);text-decoration:none;border-bottom:1px solid var(--color-line);cursor:pointer;">错题簿 →</a>
   </div>
 </template>
 

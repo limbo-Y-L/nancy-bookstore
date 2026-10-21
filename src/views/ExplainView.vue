@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import FoxHint from '../components/FoxHint.vue'
-import { callLLM } from '@/lib/llm'
+import { callLLM, wireState } from '@/lib/llm'
+import { col } from '@/lib/db'
 
 interface MockWrong {
   id: string
@@ -19,13 +20,24 @@ const mockWrongs: MockWrong[] = [
 ]
 
 const route = useRoute()
+const router = useRouter()
 const id = route.query.id as string
-const raw = mockWrongs.find(w => w.id === id) ?? mockWrongs[0]
+// 单开关：全三页共用；mock 走本地镜像，real 走 col('WRONGS').doc(id).get()
+const useMock = wireState === 'mock'
 
-// wireState 仍 mock：callLLM 返回占位串，不真发请求
+const raw = ref<MockWrong>(mockWrongs[0])
 const explanation = ref('')
+
 onMounted(async () => {
-  explanation.value = await callLLM(`讲一讲这道${raw.wrongType}题`)
+  if (!useMock) {
+    const res = await col('WRONGS').doc(id).get()
+    const d = res.data as unknown as { wrongType: string; source: string; createdAt: string }
+    raw.value = { id, wrongType: d.wrongType, tags: [], source: d.source, ts: new Date(d.createdAt).getTime() }
+  } else {
+    raw.value = mockWrongs.find(w => w.id === id) ?? mockWrongs[0]
+  }
+  // wireState 仍 mock：callLLM 返回占位串，不真发请求
+  explanation.value = await callLLM(`讲一讲这道${raw.value.wrongType}题`)
 })
 </script>
 
@@ -50,8 +62,8 @@ onMounted(async () => {
     <!-- 主体：讲解段落（whitespace-pre-line 保留换行） -->
     <article class="explain-body">{{ explanation }}</article>
 
-    <!-- 底部羽毛标记：本包不绑 click（可点留②-4末） -->
-    <div class="foot-mark" aria-hidden="true">🪶</div>
+    <!-- 底部羽毛标记：🪶 统一返回（tabindex+click+enter，图标不改） -->
+    <div class="foot-mark" tabindex="0" role="button" aria-label="返回" @click="router.back()" @keydown.enter="router.back()">🪶</div>
   </div>
 </template>
 

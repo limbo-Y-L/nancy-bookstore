@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import FoxHint from '../components/FoxHint.vue'
+import { col } from '@/lib/db'
+import { wireState } from '@/lib/llm'
 
 interface MockWrong {
   id: string
@@ -20,16 +22,32 @@ const mockWrongs = ref<MockWrong[]>([
 const formType = ref('计算')
 const formText = ref('')
 
-const submitWrong = () => {
+// 单开关：全三页共用；mock 分支完全保留，real 走 col('WRONGS').add（schema 见 spec/02_schema.md）
+const useMock = wireState === 'mock'
+
+const submitWrong = async () => {
   const text = formText.value.trim()
   if (!text) return
-  mockWrongs.value.push({
-    id: 'm' + Date.now(),
-    wrongType: formType.value,
-    tags: [],
-    source: '手动记录',
-    ts: Date.now()
-  })
+  if (useMock) {
+    mockWrongs.value.push({
+      id: 'm' + Date.now(),
+      wrongType: formType.value,
+      tags: [],
+      source: '手动记录',
+      ts: Date.now()
+    })
+  } else {
+    await col('WRONGS').add({
+      familyId: 'f_pending',
+      source: text,
+      answer: '',
+      wrongType: formType.value,
+      tags: [],
+      reviewed: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    })
+  }
   formText.value = ''
 }
 
@@ -76,6 +94,9 @@ const goExplain = (id: string) => router.push({ path: '/explain', query: { id } 
     <FoxHint>
       <span>错题不急，慢慢来。</span>
     </FoxHint>
+
+    <!-- 底部羽毛标记：🪶 统一返回（tabindex+click+enter，图标不改） -->
+    <div class="foot-mark" tabindex="0" role="button" aria-label="返回" @click="router.back()" @keydown.enter="router.back()">🪶</div>
   </div>
 </template>
 
@@ -147,6 +168,12 @@ const goExplain = (id: string) => router.push({ path: '/explain', query: { id } 
   margin-top: var(--space-1);
   font-size: var(--font-sm);
   color: var(--color-ink-faint);
+}
+.foot-mark {
+  align-self: flex-start;
+  font-size: var(--font-base);
+  opacity: 0.5;
+  cursor: pointer;
 }
 .add-form {
   display: flex;

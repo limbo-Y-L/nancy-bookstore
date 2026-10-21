@@ -34,6 +34,10 @@ D10 一句「续上」+粘贴即满血
 
 [2026-10-21补丁·DOMESTIC-PRIORITY] 底座迁转：弃 Cloudflare Pages 迁 CloudBase（国内优先）；理由：pages.dev 实证超时、国内节点就近、免域名免备案。同源 DEC-2026-10-21-ADR07。存储四集合（families / wrongs / profiles / plans）+ 家庭码 family_code 分区 + callLLM 前端直连 + 本地缓存兜底（IndexedDB + JSON 导入导出）。禁止项四条：弃CF链路 / 弃买域名NS / 弃服务端代调LLM / 弃登录体系。纪律口径校正：D2「DEP锁Cloudflare Pages不复议」**管辖范围限定为 CF 期封存史实，条文不撤销但不再约束演进方向**（演进方向以 ADR-07 为准）。交付节奏按三批（①底座通 ②核心闭环 ③规划打磨），用户只拍板不答题（承 playbook §P11/§P14）。
 
+[2026-10-21补丁·SCHEMA-DOMAIN] ADR-08消歧落地：CloudBase集合名域与本地IndexedDB sealed域分野明确；col()仅收keyof typeof COL（不收裸值）属有意类型护栏，非坑。同步纠正派发回显中『需去控制台点建集合』之误判×3次——schemaless文档模型首次add()自动建集合，无需手点。
+
+[2026-10-21补丁·BATCH-2-4] 批次②-4收口：三视图(Wrongs/Explain/Progress)由mock本地态换线至 col('WRONGS') 真读写，单开关 useMock=wireState==='mock' 守门、mock分支保留可零成本回滚；wireState仍'mock'(G2未放)仅标G2-pending；AtelierView内容区加「错题簿→」#/wrongs入口(底栏零动)；三视图🪶统一 tabindex+click+enter→router.back()；主CSS哈希 index-D8j5n5-K 零漂移铁证。
+
 ════════════════════════════════════════════════════════════
 
 §A 项目背景 · 全局愿景层（跨迭代稳定）
@@ -64,6 +68,7 @@ Web+PWA壳Pad竖屏优先/手机并重/电脑兜底；全局聊天窗双态；�
   ⑬ 架构迁转 ──────────────── ▶ 进行中 2026-10-21（CF → CloudBase · DEC-2026-10-21-ADR07）
      四集合（families / wrongs / profiles / plans）+ family_code 分区 + callLLM 直连 + 本地缓存兜底；封存态保留不回溯
      实测托管域名 https://nancy-bookstore-d3fnn33i4766c7dc-1511708160.tcloudbaseapp.com（2026-10-21 推壳首发·冒烟200）
+  2026-10-21 批次②-3 收束 @d976f40：src/lib/llm.ts(callLLM mock骨架,wireState='mock') + src/lib/sync.ts(probe四集合成对add/remove静默零残留) + ADR-08补注消歧 + db.ts col() key-only签名护栏标为有意设计
 
 ▸ 演进路标（仅锚方向，子阶段留白）
   二期 · 口语伴读/自适应出题/深度学情/习作 · 温故小灶六节点串行（🟡挂起非阻塞）
@@ -73,8 +78,8 @@ Web+PWA壳Pad竖屏优先/手机并重/电脑兜底；全局聊天窗双态；�
 
 §C 下一步（当前真实待办 · 迁转⑬主线）
 
-近项① 批次① 底座通：CloudBase环境建好取环境ID → 静态壳推上出 *.tcloudbaseapp.com 链接 → ocr云函数迁入三档逻辑跑通（环境ID与托管域名已实测落定，见§B⑬）
-近项② 批次② 核心闭环：sync云函数+四集合建好 → callLLM前端直连接通 → 错题本/讲题/学情三页接通 → 设置抽屉（Key+家庭码+导出）
+近项① 批次① 底座通：CloudBase环境建好取环境ID → 静态壳推上出 *.tcloudbaseapp.com 链接 → ocr云函数迁入三档逻辑跑通（环境ID与托管域名已实测落定，见§B⑬） ✅闭环2026-10-21（环境/推壳/规约锁/OCR mock骨架/仓库卫生）
+近项② 批次② 核心闭环：四集合契约+db锚点+callLLM mock骨架+sync探针 ✅已落 ⏳待：②-4三页接通 / ②-5设置抽屉 / ②-6清账
 近项③ 旧链路清账：functions/ 实装退役、wrangler/_routes 口径作废、CF Dashboard 项目与密钥处置
 说明：封存态保留（v1.0 基线不回溯）；迁转⑬进行中；用户只拍板不答题；元宝不抢跑。
 
@@ -90,6 +95,7 @@ ADR-04 TCH单题消费=有意设计非缺陷 · WHY三段式单题闭环结构 �
 ADR-05 append-only不覆写 · WHY审计可追溯 · HOW sealed段不动
 ADR-06 讲题内容隔离独立页 · WHY DEC-16二审时间解耦 · HOW replace('/home')无堆叠
 ADR-07 架构迁转国内优先 · WHAT弃CF迁CloudBase · WHY pages.dev实证超时/国内节点顺/免域名免备案 · HOW 静态壳复用+ocr云函数+前端直连LLM+family_code分区（ADR-03 限定为CF期封存史实，不约束演进方向）
+ADR-08【数据契约·集合命名域锁定·2026-10-21】WHAT四集合逻辑schema锁定(families/wrongs/profiles/plans)+db.ts col() key-only签名护栏 · WHY 编译期拦拼错集合名+历史别名captures/records永久作废 · HOW spec/02_schema.md成文；括号注：本约束限CloudBase集合名域，本地IndexedDB captures/teach-events属sealed域不受此限
 
 ════════════════════════════════════════════════════════════
 
