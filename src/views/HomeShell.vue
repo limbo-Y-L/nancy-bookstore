@@ -1,18 +1,27 @@
 <script setup lang="ts">
 // 首页静态素壳 · 严格按 notes/01_wireframes 首页素壳登记布局
-// 顺序：顶氛围区 → 作业桌双钮 → 开眼界轻卡 → 弧线星轨小灶进度占位 → 星练轻卡入口
+// 顺序：顶氛围区 → 作业桌双钮 → 开眼界轻卡 → 弧线星轨小灶进度 → 星练轻卡入口
 // 组合式引用 StarTrack / SoftCard / FoxHint（FoxHint 仅槽位占位，home 不显）。
 // 自身只留布局顺序编排，不内联样式块（样式由 tokens.css 全局类 + 子组件承载）。
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import SoftCard from '../components/SoftCard.vue'
 import StarTrack from '../components/StarTrack.vue'
 import FoxHint from '../components/FoxHint.vue'
-import { useRouter } from 'vue-router'
+import { getProgress } from '../lib/progress'
 // ParentGate 依 DEC-13 居 Shell 右上羽毛长按，不在此页内联。
 // 欢迎语（按本地时钟固定切段）与铭牌句（随机轻抽）统一从文案常量层取，模板不写死句子。
 import { welcomePhrase, pickPlatePhrase } from '../constants/voice'
 
 // CAP-01 双入口行为接线：作业桌两钮跳采集页（壳层零改动，仅接线）
 const router = useRouter()
+
+// 温故小灶进度：mock 态读 localStorage（progress.ts 守 wireState，live 才碰 db）
+const progressText = ref('第 1/6 关 · 已完成 0 题')
+onMounted(async () => {
+  const p = await getProgress()
+  progressText.value = `第 ${p.currentStage}/6 关 · 已完成 ${p.completedQuestions} 题`
+})
 
 // 首页「今日小知识」温柔科普短句静态库（纯字面量，无 computed/watch/random；与星练场「风的形状」轻呼应）
 const todayKnowledge = '小知识：风没有形状，但树叶知道它来过。' as const
@@ -52,10 +61,10 @@ used.push(plateArena)
       <p class="card-sub">{{ plateEye }}</p>
     </SoftCard>
 
-    <!-- 4. 弧线星轨小灶进度占位（六节点串行） -->
+    <!-- 4. 弧线星轨小灶进度（六节点串行） -->
     <SoftCard tag="温故小灶">
       <StarTrack />
-      <p class="card-sub">六节点星轨 · 进度占位</p>
+      <p class="card-sub">{{ progressText }}</p>
       <p class="card-sub">{{ plateKitchen }}</p>
     </SoftCard>
 

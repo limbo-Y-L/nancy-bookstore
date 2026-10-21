@@ -16,29 +16,34 @@ withDefaults(
 
 <template>
   <div class="star-track" aria-hidden="true">
-    <span class="rail"></span>
-    <span
-      v-for="(state, i) in nodes"
-      :key="i"
-      class="node"
-      :class="state"
-    ></span>
+    <div class="track-inner">
+      <span class="rail"></span>
+      <span
+        v-for="(state, i) in nodes"
+        :key="i"
+        class="node"
+        :class="state"
+      ></span>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .star-track {
   position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   height: 40px;
   margin: var(--space-1) 0;
 }
+/* 轨道区=100% 宽（取消内缩）并占满容器高，使 top:50% 垂直居中；
+   作为节点/rail 的绝对定位上下文 */
+.track-inner {
+  position: relative;
+  height: 100%;
+}
 .rail {
   position: absolute;
-  left: 9%;
-  right: 9%;
+  left: 10px;
+  right: 10px;
   top: 50%;
   height: 2px;
   transform: translateY(-50%);
@@ -47,19 +52,22 @@ withDefaults(
   z-index: 0;
 }
 .node {
-  position: relative;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
   z-index: 1;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
 }
-/* 弧线起伏（占位，非精绘）；rail 为第1子，节点自第2子起 */
-.node:nth-child(2) { transform: translateY(7px); }
-.node:nth-child(3) { transform: translateY(2px); }
-.node:nth-child(4) { transform: translateY(-2px); }
-.node:nth-child(5) { transform: translateY(-2px); }
-.node:nth-child(6) { transform: translateY(2px); }
-.node:nth-child(7) { transform: translateY(7px); }
+/* 六节点圆心精确落在轨道线起止点：translate(-50%) 使圆心=left 值，
+   故首末 left:10px / calc(100% - 10px) 与 rail 端点(各 inset 10px)重合；中间等距 */
+.node:nth-child(2) { left: 10px;                             top: calc(50% + 4px); }
+.node:nth-child(3) { left: calc(10px + (100% - 20px) * 0.2); top: calc(50% + 2px); }
+.node:nth-child(4) { left: calc(10px + (100% - 20px) * 0.4); top: calc(50% - 2px); }
+.node:nth-child(5) { left: calc(10px + (100% - 20px) * 0.6); top: calc(50% - 2px); }
+.node:nth-child(6) { left: calc(10px + (100% - 20px) * 0.8); top: calc(50% + 2px); }
+.node:nth-child(7) { left: calc(10px + (100% - 20px));       top: calc(50% + 4px); }
 
 /* done 实心紫 / current 呼吸 / todo 浅灰描边 */
 .node.done {
