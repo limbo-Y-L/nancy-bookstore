@@ -236,4 +236,5 @@ DEC-24：会话骨架草稿，未独立落盘，语义并入全局骨架备忘�
   1. 四集合字段类型以 `spec/02_schema.md` 逐字段锁定（`_id`/`ownerId`/`familyId` ref/`createdAt`/`sealed`/`wrongType` enum 等）；
   2. `src/lib/db.ts` 仅暴露 `COL` 常量 + `col()` 快捷，零读写逻辑（读写留给②-3/②-4）；
   3. 本文件（spec/02_schema.md）由规约层（WB）维护，CB 只读不写。
+- 括号注：本约束限 CloudBase 集合名域；本地 IndexedDB captures/teach-events 属 sealed 域，不受此限。
 - 编号：与 DEC 顺延、不重号；ADR-07 迁转方向不变，本条补数据层细则。
