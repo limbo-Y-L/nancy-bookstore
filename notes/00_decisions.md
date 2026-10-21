@@ -224,3 +224,16 @@ DEC-24：会话骨架草稿，未独立落盘，语义并入全局骨架备忘�
 - 编号：与既有 DEC 顺延、不重号；DEC-09~26 编号段原样保留，本条独立命名不占号。
 - 与 ADR-03 关系：**ADR-03 管辖范围限定 CF 期封存史实，条文不撤销但不再约束演进方向**；演进方向以本条为准。
 - 禁止项（同期固化，见 `02_playbook.md §P13`）：弃 CF 链路 / 弃买域名 NS / 弃服务端代调 LLM / 弃登录体系。
+
+---
+
+## 数据契约决策 · 2026-10-21（DEC-2026-10-21-ADR08）
+
+[DEC-2026-10-21-ADR08] 数据契约 · 四集合逻辑 schema 锁定（batch② 生效）
+- **WHAT**：以 `spec/02_schema.md` 作为 CloudBase 文档库四集合（`families`/`wrongs`/`profiles`/`plans`）唯一逻辑 schema；CloudBase 为 schemaless 文档模型，无 DDL 建表动作，本文件即 schema。
+- **WHY**：① 迁转后数据落 CloudBase 文档库，需显式字段契约防静默漂移；② 集合名全域只认这四词，`captures`/`records`/`traces` 等历史别名永久作废；③ 字段增删强制走 ADR，禁止静默扩字段。
+- **HOW**：
+  1. 四集合字段类型以 `spec/02_schema.md` 逐字段锁定（`_id`/`ownerId`/`familyId` ref/`createdAt`/`sealed`/`wrongType` enum 等）；
+  2. `src/lib/db.ts` 仅暴露 `COL` 常量 + `col()` 快捷，零读写逻辑（读写留给②-3/②-4）；
+  3. 本文件（spec/02_schema.md）由规约层（WB）维护，CB 只读不写。
+- 编号：与 DEC 顺延、不重号；ADR-07 迁转方向不变，本条补数据层细则。
