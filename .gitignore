@@ -2,6 +2,9 @@
 node_modules/
 dist/
 dist-ssr/
+pnpm-lock.yaml
+tsconfig.tsbuildinfo
+tsconfig.node.tsbuildinfo
 
 # 本地环境与密钥（严禁进仓库）
 .env
