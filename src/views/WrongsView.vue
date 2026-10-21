@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import FoxHint from '../components/FoxHint.vue'
 
 interface MockWrong {
@@ -31,6 +32,10 @@ const submitWrong = () => {
   })
   formText.value = ''
 }
+
+const router = useRouter()
+// 列表项 click → /explain? id=...（mock 态，不接 col()）
+const goExplain = (id: string) => router.push({ path: '/explain', query: { id } })
 </script>
 
 <template>
@@ -42,7 +47,7 @@ const submitWrong = () => {
 
     <!-- 错题卡片列表 -->
     <div class="list">
-      <article v-for="w in mockWrongs" :key="w.id" class="wrong-card">
+      <article v-for="w in mockWrongs" :key="w.id" class="wrong-card" @click="goExplain(w.id)">
         <div class="row-top">
           <span class="type">{{ w.wrongType }}</span>
           <span class="src">{{ w.source }}</span>

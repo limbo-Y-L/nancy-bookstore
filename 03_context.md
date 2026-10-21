@@ -105,6 +105,7 @@
 - 2026-10-21 ②-2 数据契约+db层落，spec/02_schema.md 四集合字段契约新建 + src/lib/db.ts（COL 常量/col() 快捷，零读写） + ADR-08 简记
 - 2026-10-21 ②-3 callLLM占位骨架+sync探针落，真LLM wire G2待放
 - 2026-10-21 ②-4a 错题本视图+讲题/学情占位壳+三路由落，mock态不接col()读写（真读写留②-4末换线）
+- 2026-10-21 ②-4b ExplainView补实（callLLM mock接线+列表项跳/explain），wireState仍mock
 - 2026-10-21 存档点：批次②-3 @d976f40；②-4三页接通待启（mock态先行，G2真LLM放行届时单独摆选项）
 
 ## §5 协同与回执状态（三协同审核闭环）
