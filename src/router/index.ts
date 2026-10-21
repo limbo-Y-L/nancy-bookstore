@@ -18,6 +18,10 @@ export const router = createRouter({
     { path: '/teach', name: 'teach', component: TeachView },
     { path: '/', component: HomeShell }, // 首页
     { path: '/atelier', component: AtelierView }, // 妙语工坊
-    { path: '/arena', component: ArenaView } // 星练场
+    { path: '/arena', component: ArenaView }, // 星练场
+    // ②-4a 错题/讲题/学情三视图（mock 态，真实读写留②-4末换线；path 深度 ≤2）
+    { path: '/wrongs', component: () => import('@/views/WrongsView.vue') },
+    { path: '/explain', component: () => import('@/views/ExplainView.vue') },
+    { path: '/progress', component: () => import('@/views/ProgressView.vue') }
   ]
 })

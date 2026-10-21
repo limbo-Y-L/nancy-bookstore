@@ -38,6 +38,11 @@ function cfPagesRoutesManifest(): Plugin {
 // MVP 脚手架 · 技术栈锁定 Vue3 + Vite + TypeScript + vite-plugin-pwa
 // 仅落布局骨架与 Design Token，不接数据、不写业务逻辑。
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': resolve(projectRoot, 'src')
+    }
+  },
   plugins: [
     vue(),
     VitePWA({
