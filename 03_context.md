@@ -101,6 +101,7 @@
 - src/：工程源码域（v1.0-nancy-bookhouse 已封档）—— CodeBuddy 唯一可写域，WorkBuddy 不碰
   - components/（Shell / StarTrack / SoftCard / FoxHint / ParentGate）· views/（HomeShell / AtelierView / ArenaView）· App.vue
 - .workbuddy/memory/：记忆层（MEMORY.md 跨会话长期记忆 + YYYY-MM-DD.md 当日流水）—— 仅 WorkBuddy 写
+- 2026-10-21 ②-1 SDK底座落，cbApp/db单例就位（src/lib/cloudbase.ts 新建 + @cloudbase/js-sdk 入 deps；零业务逻辑/零集合读写）
 
 ## §5 协同与回执状态（三协同审核闭环）
 
