@@ -29,16 +29,33 @@
 
 ## §3 当前进度锚
 
-- 阶段：阶段A·业务规约侧 ✅ 已封口（DEC总锚+线框索引+spec成文三件齐）；阶段B·技术实现侧 ✅ 已贯通
+- 阶段：阶段A·业务规约侧 ✅ 已封口（DEC总锚+线框索引+spec成文三件齐）；阶段B·技术实现侧 ✅ 已贯通；**架构迁转⑬ 进行中（2026-10-21 起：Cloudflare Pages → CloudBase，见 DEC-2026-10-21-ADR07）**
 - 已终封域：批改页/讲题页线框（历史锁）；N2视觉精绘三视图（HomeShell/AtelierView/ArenaView）全封口；链路⑥内容层全封口（工坊语料+星练题壳+首页科普，跨页风线索闭环）；**链路⑨视觉精修方案Ⅱ「夜读纸窗」全封口**（radial-gradient星空+紫粉金主标题+暖米卡+暖雾紫毛玻璃底栏，build绿）
-- 已封档：v1.0-nancy-bookhouse 纯净静态基线（2026-10-19封档，无欠账）
+- 已封档：v1.0-nancy-bookhouse 纯净静态基线（2026-10-19封档，无欠账）—— **封存态保留，不因架构迁转解封、不回溯**
 - 链路⑦新链路已开（开新不碰旧）→ **✅ 全封口**；⑦-₀ Shell铭牌--font-display补齐 ✅；⑦-A小狐呼吸彩蛋 ✅已封口（Shell.vue `<style scoped>` 小狐呼吸终稿：常态 .35 / hover·focus-visible .85 / transition .6s，无 init，零 JS 零 keyframes，单点壳层全站继承）
-- 下一步实开：无活跃待办（全工程空盘；非阻塞项：温故小灶🟡二期线框域 + 羽毛SVG化 + StarTrack 历史 breathe 清理，均已挂起）
+- 下一步实开：**架构迁转⑬ 三批推进为主线**（①底座通 → ②核心闭环 → ③规划打磨，用户只拍板不答题）；非阻塞挂起项不变（温故小灶🟡二期线框域 + 羽毛SVG化 + StarTrack 历史 breathe 清理）
 
 > 主链实装骨架封 · 2026-10-20 · CAP-01→REV-01→REV-02→REV-03→TCH-01→PAR-01 全片 impl-done；主黄金路径闭环；下一阶段待开：OCR-L1真源切片（独立非阻塞）/ 链路⑪线框域 / 托管部署准备（三选待用户定序）
 > OCR-L1真源切片已落 · 2026-10-20 · 架构分层「浏览器fetch → 无状态Edge(/api/ocr) → 腾讯云极速OCR(L1) → 归一OcrNormalized → 既有captures表一次put」；前端零AK零直连腾讯endpoint；真源异常静默回落mockReview桩不白屏；vue-tsc 0错·CSS 34644(±0严判)·JS +1075·PWA 8
-> 部署形态锁定 Cloudflare Pages（2026-10-20），functions/ 原位复用，上线后真机校验待执行
+> 部署形态（历史记录）· 2026-10-20 · 曾锁定 Cloudflare Pages、functions/ 原位复用 —— 2026-10-21 起该形态降为历史记录，**不再作为当前态**
+> 当前底座 · 2026-10-21 · **迁转中 · 目标 CloudBase**（DEC-2026-10-21-ADR07：弃境外 CF 迁国内 CloudBase；静态壳复用 + ocr 云函数 + 前端直连 LLM + family_code 分区；旧 CF 链路整条弃用不双轨）
 > git 主链封口 · 2026-10-20 · 本地 main 分支（初始提交 b1e163d「main-chain sealed」·60文件）+ 远端 GitHub Public 空仓，push -u origin main 成功闭环；CodeBuddy 不代执行有外部后果操作（git push/远端写/授权），此类动作用户手控
+
+## §3.1 当前快照 · 迁转选型（2026-10-21 · DEC-2026-10-21-ADR07）
+
+| 选型项 | 快照值 | 说明 |
+|---|---|---|
+| 底座 | **CloudBase**（弃 Cloudflare Pages） | 静态壳复用，不重写前端；国内节点就近 |
+| 存储 | **四集合** | ①`families` 家庭档案（家庭码 family_code、家庭成员与偏好） ②`wrongs` 错题与讲题（采集原图元数据+批改结果、订正重判、讲题事件 append-only） ③`profiles` 学情与投喂（家长投喂知识库非RAG、知识点/题型打标、学情画像） ④`plans` 计划（每日/周计划草稿与家长确认态） |
+| 分区 | **家庭码 family_code** | 每家庭一码，四集合一律按 family_code 分区；**替代登录体系**（不建注册/登录/账号） |
+| 调用 | **callLLM 前端直连** | 模型密钥不落我方服务端；前端直连模型方，服务端只留存储与 ocr 云函数 |
+| 兜底 | **本地缓存兜底** | IndexedDB 优先 + 网络异常回落本地缓存；JSON 导入导出兜底 |
+
+- 云函数：`ocr` 云函数承接既有 OCR-L1 口径，密钥置云函数环境变量，**不入前端包**。
+- 旧链路：CF Pages / Pages Functions / wrangler / _routes 口径**弃用**，`functions/` 目录内实装随迁转改造后退役。
+- 禁止项：弃 CF 链路 / 弃买域名 NS / 弃服务端代调 LLM / 弃登录体系（详 `02_playbook.md §P13`）。
+- 交付节奏：迁转按三批推进（①底座通 → ②核心闭环 → ③规划打磨，2026-10-21 对账校正权威口径），用户**只拍板不答题**（详 `02_playbook.md §P11`）。
+- 实测托管域名 nancy-bookstore-d3fnn33i4766c7dc-1511708160.tcloudbaseapp.com，2026-10-21 11:20 冒烟200
 
 ## 2026-10-20 会话追加（主链心流共识登记）
 
@@ -136,6 +153,7 @@
 - 2026-10-20 OCR-L1真源切片完成（新建functions/api/ocr.ts无状态Edge+_shared归一+src/types/ocr.ts+useOcr.ts；TC3签名自实现零SDK；Edge六分支全200静默回落；CSS±0严判通过·src内Secret类0命中）·state:ok
 - 2026-10-20 部署准备DEP完成（CF Pages锁定·functions/原位·deploy-notes落盘仅列变量名零secret泄露·gitignore新建·DEP-01 _routes.json生成零依赖插件·CSS/JS/precache三项零变化）·state:ok
 - 2026-10-20 git主链封口落档（本地main+远端GitHub push成功·CodeBuddy不代执行外部后果操作纪律首立·deploy-notes production_branch回填完成）·state:ok
+- 2026-10-21 迁转批次·全源层同步（playbook §P11~§P13 节奏+权切分+禁止项 / context §3 阶段·底座·封存态 + §3.1 迁转选型快照 / 00_decisions DEC-2026-10-21-ADR07 / spec §3 存储行 / META DOMESTIC-PRIORITY 补丁 + §B§C§D§I）·state:ok（WB 落盘完成，回显待元宝 §P10 对账）
 - 审核结果：落盘确认✓（待用户回执）
 
 ## §6 校准协议（漂移急救）

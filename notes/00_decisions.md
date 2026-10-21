@@ -207,3 +207,20 @@ DEC-24：会话骨架草稿，未独立落盘，语义并入全局骨架备忘�
 - [ ] `StarTrack.vue` 历史 `@keyframes breathe` 存量清理项
 
 结构弹性自检 链路⑩ 2026-10-20 结论：骨皮解耦成立，轻风险规约固化，源码零改动。（详见 `notes/04_structure.md`）
+
+---
+
+## 架构迁转决策 · 2026-10-21（DEC-2026-10-21-ADR07）
+
+[DEC-2026-10-21-ADR07] 架构迁转 · 国内优先
+- **WHAT**：弃 Cloudflare Pages（境外 pages.dev 链路），迁 CloudBase（腾讯云国内）；静态壳复用 + OCR 云函数 + 前端直连 LLM + family_code 分区。
+- **WHY**：① pages.dev 实证超时（境外链路在国内访问不可靠）；② 国内节点就近，延迟更低；③ 免域名、免备案（不购买域名、不改 NS）。
+- **HOW**：
+  1. 存储迁 CloudBase 文档库四集合 —— `families`（家庭档案：家庭码 family_code、家庭成员与偏好）/ `wrongs`（错题与讲题：采集原图元数据+批改结果、订正重判、讲题事件 append-only）/ `profiles`（学情与投喂：家长投喂知识库非RAG、知识点/题型打标、学情画像）/ `plans`（计划：每日/周计划草稿与家长确认态）；四集合一律按 `family_code` 分区；
+  2. OCR 由云函数承接（密钥置云函数环境变量，不入前端包），承接既有 OCR-L1 口径；
+  3. LLM 前端直连（callLLM），我方服务端**不代持**模型密钥；
+  4. 本地 IndexedDB 缓存兜底 + JSON 导入导出兜底（双兜底）；
+  5. 旧 CF 链路（Pages / Pages Functions / wrangler / _routes）整条弃用，**不双轨并行**。
+- 编号：与既有 DEC 顺延、不重号；DEC-09~26 编号段原样保留，本条独立命名不占号。
+- 与 ADR-03 关系：**ADR-03 管辖范围限定 CF 期封存史实，条文不撤销但不再约束演进方向**；演进方向以本条为准。
+- 禁止项（同期固化，见 `02_playbook.md §P13`）：弃 CF 链路 / 弃买域名 NS / 弃服务端代调 LLM / 弃登录体系。

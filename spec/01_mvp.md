@@ -36,7 +36,7 @@
 | 样式 | CSS变量Design Token，主色域 `#E8DFF5` 淡紫，圆角≥14px，基准字号16pt |
 | 路由 | hash路由，深度≤2，返回一键回首页，无面包屑 |
 | 状态 | pinia，极轻使用，不引重型 |
-| 存储 | localStorage模拟投喂库（非RAG），无服务端持久化 |
+| 存储 | 本地IndexedDB缓存 + CloudBase文档库双向同步（families / wrongs / profiles / plans 四集合），JSON导入导出兜底 |
 | PWA | vite-plugin-pwa，manifest name=`Nancy的奇妙书屋`，display=standalone |
 | Mock | `mock/` 目录，讲题流静态数组 |
 
