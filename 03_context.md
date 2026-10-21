@@ -112,6 +112,8 @@
 - [2026-10-21] batch②-4.5 schema字段修正 wrongType→subject 归因维度拆出待②-5 PWA precache 920→176KiB
 - [2026-10-21 EOB] ②-4全系上线收官：11提交push+deploy双完成; mock三页+换线骨架+工坊入口+可点返回+subject字段拆出+workbox排除cloudbase; 线上PWA 176KiB验证; G2/familyId/归因UI归②-5
 - [2026-10-21] batch②-5 设置抽屉五区落位：家庭码8位(localStorage)/API Key(localStorage)/归因四选项(ADR-10补misread)/错题JSON导出; 设置入口⚙️(底栏三键零动·浮动钮); wireState='mock'守门未破·主CSS34,644B零漂移
+- [2026-10-21] batch②-6/②-6.1 星轨节点对齐修复+进度文案动态化(src/lib/progress.ts 新建·getProgress/setProgress；StarTrack 内缩轨道区+节点absolute定点；HomeShell 接动态文案)；wireState='mock'守门未破·主CSS 34820B·deploy index-brpbXruF.css
+- [2026-10-21] batch②-7 G2 闸门放行：src/lib/llm.ts wireState 'mock'→'live'，四集合(families/wrongs/profiles/plans)真读写激活；前端直连 CloudBase env nancy-bookstore-d3fnn33i4766c7dc(cbApp.init 字面量)；回滚=wireState 改回 'mock' 秒回·云端数据不丢
 
 ### 批次② 进度/状态表（2026-10-21 实测口径 · commit 均已核）
 
@@ -124,6 +126,7 @@
 | ②-4.5 | subject 字段拆出 + workbox 排除 SDK chunk | ✅闭环 2026-10-21 | commit e25ce85 | precache 15/920KiB→14/176.72KiB |
 | ②-5 | 设置抽屉五区 + 家庭码 + 导出 + 归因浮层 | ✅闭环 2026-10-21 | commit 1d32b14 | ADR-10 补 misread·守门未破 |
 | ②-6/②-6.1 | 星轨修复（对齐+文案动态化） | ✅闭环 2026-10-21 | commit f093ab7 | 主CSS 34820B·deploy index-brpbXruF.css |
+| ②-7/G2 | wireState 闸门放行 mock→live（四集合真读写激活） | ✅闭环 2026-10-21 | commit: feat(g2): wireState live | 回滚秒级：wireState='mock'；云端数据不丢 |
 
 ## §5 协同与回执状态（三协同审核闭环）
 
