@@ -7,7 +7,7 @@ import { wireState } from '@/lib/llm'
 
 interface MockWrong {
   id: string
-  wrongType: string
+  subject: string
   tags: string[]
   source: string
   ts: number
@@ -15,8 +15,8 @@ interface MockWrong {
 
 // mock 态：本地镜像（与 ExplainView 同源副本，不接 col()）
 const mockWrongs: MockWrong[] = [
-  { id: 'm1', wrongType: '计算', tags: ['分数'], source: '作业本', ts: Date.now() - 86400000 },
-  { id: 'm2', wrongType: '语文', tags: ['错别字'], source: '听写', ts: Date.now() - 3600000 }
+  { id: 'm1', subject: '计算', tags: ['分数'], source: '作业本', ts: Date.now() - 86400000 },
+  { id: 'm2', subject: '语文', tags: ['错别字'], source: '听写', ts: Date.now() - 3600000 }
 ]
 
 // 单开关：全三页共用；mock 走本地镜像，real 走 col('WRONGS').get() 聚合
@@ -27,9 +27,9 @@ const router = useRouter()
 onMounted(async () => {
   if (!useMock) {
     const res = await col('WRONGS').get()
-    cloudWrongs.value = (res.data as Array<{ _id: string; wrongType: string; source: string; createdAt: string }>).map(d => ({
+    cloudWrongs.value = (res.data as Array<{ _id: string; subject: string; source: string; createdAt: string }>).map(d => ({
       id: d._id,
-      wrongType: d.wrongType,
+      subject: d.subject,
       tags: [],
       source: d.source,
       ts: new Date(d.createdAt).getTime()
@@ -43,7 +43,7 @@ const source = computed<MockWrong[]>(() => (useMock ? mockWrongs : cloudWrongs.v
 const stats = computed(() =>
   source.value.reduce(
     (acc, w) => {
-      acc[w.wrongType] = (acc[w.wrongType] ?? 0) + 1
+      acc[w.subject] = (acc[w.subject] ?? 0) + 1
       return acc
     },
     { 计算: 0, 语文: 0, 英语: 0, 其他: 0 } as Record<string, number>

@@ -7,7 +7,7 @@ import { wireState } from '@/lib/llm'
 
 interface MockWrong {
   id: string
-  wrongType: string
+  subject: string
   tags: string[]
   source: string
   ts: number
@@ -15,8 +15,8 @@ interface MockWrong {
 
 // mock 态：本地数组，不接 col().add（真写入留②-4末统一换线）
 const mockWrongs = ref<MockWrong[]>([
-  { id: 'm1', wrongType: '计算', tags: ['分数'], source: '作业本', ts: Date.now() - 86400000 },
-  { id: 'm2', wrongType: '语文', tags: ['错别字'], source: '听写', ts: Date.now() - 3600000 }
+  { id: 'm1', subject: '计算', tags: ['分数'], source: '作业本', ts: Date.now() - 86400000 },
+  { id: 'm2', subject: '语文', tags: ['错别字'], source: '听写', ts: Date.now() - 3600000 }
 ])
 
 const formType = ref('计算')
@@ -31,7 +31,7 @@ const submitWrong = async () => {
   if (useMock) {
     mockWrongs.value.push({
       id: 'm' + Date.now(),
-      wrongType: formType.value,
+      subject: formType.value,
       tags: [],
       source: '手动记录',
       ts: Date.now()
@@ -41,7 +41,7 @@ const submitWrong = async () => {
       familyId: 'f_pending',
       source: text,
       answer: '',
-      wrongType: formType.value,
+      subject: formType.value,
       tags: [],
       reviewed: false,
       createdAt: new Date().toISOString(),
@@ -67,7 +67,7 @@ const goExplain = (id: string) => router.push({ path: '/explain', query: { id } 
     <div class="list">
       <article v-for="w in mockWrongs" :key="w.id" class="wrong-card" @click="goExplain(w.id)">
         <div class="row-top">
-          <span class="type">{{ w.wrongType }}</span>
+          <span class="type">{{ w.subject }}</span>
           <span class="src">{{ w.source }}</span>
         </div>
         <div class="tags">

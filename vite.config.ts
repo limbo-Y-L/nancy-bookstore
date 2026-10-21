@@ -86,6 +86,7 @@ export default defineConfig({
           'api/**',
           'sw.js',
           'workbox-*.js',
+          '**/cloudbase-*.js',
           '_routes.json',
           '**/*.map',
           'preview.log'

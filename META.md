@@ -36,6 +36,8 @@ D10 一句「续上」+粘贴即满血
 
 [2026-10-21补丁·SCHEMA-DOMAIN] ADR-08消歧落地：CloudBase集合名域与本地IndexedDB sealed域分野明确；col()仅收keyof typeof COL（不收裸值）属有意类型护栏，非坑。同步纠正派发回显中『需去控制台点建集合』之误判×3次——schemaless文档模型首次add()自动建集合，无需手点。
 
+[2026-10-21补丁·BATCH-2-4.5] wrongs集合补subject字段(学科维度) wrongType归归因流程 pending-attribution; workbox排除cloudbase-*.js; 三视图全量替换
+
 [2026-10-21补丁·BATCH-2-4] 批次②-4收口：三视图(Wrongs/Explain/Progress)由mock本地态换线至 col('WRONGS') 真读写，单开关 useMock=wireState==='mock' 守门、mock分支保留可零成本回滚；wireState仍'mock'(G2未放)仅标G2-pending；AtelierView内容区加「错题簿→」#/wrongs入口(底栏零动)；三视图🪶统一 tabindex+click+enter→router.back()；主CSS哈希 index-D8j5n5-K 零漂移铁证。
 
 ════════════════════════════════════════════════════════════

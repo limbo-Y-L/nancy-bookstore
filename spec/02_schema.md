@@ -4,7 +4,7 @@
   _id(auto) | ownerId string | label string | createdAt ISO8601 | sealed boolean
 
 ## wrongs
-  _id | familyId ref | source text | answer text | wrongType enum('concept'|'careless'|'method') | tags string[] | reviewed boolean | createdAt | updatedAt
+  _id | familyId ref | source text | answer text | subject enum('计算'|'语文'|'英语'|'其他') | wrongType enum('concept'|'careless'|'method') [pending-attribution] | tags string[] | reviewed boolean | createdAt | updatedAt
 
 ## profiles
   _id | familyId ref | llmProvider string | modelTag string | preference json | lastSync ISO8601

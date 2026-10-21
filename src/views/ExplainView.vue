@@ -7,7 +7,7 @@ import { col } from '@/lib/db'
 
 interface MockWrong {
   id: string
-  wrongType: string
+  subject: string
   tags: string[]
   source: string
   ts: number
@@ -15,8 +15,8 @@ interface MockWrong {
 
 // mock 态：本地镜像（不接 col()，真读留②-4末换线）
 const mockWrongs: MockWrong[] = [
-  { id: 'm1', wrongType: '计算', tags: ['分数'], source: '作业本', ts: Date.now() - 86400000 },
-  { id: 'm2', wrongType: '语文', tags: ['错别字'], source: '听写', ts: Date.now() - 3600000 }
+  { id: 'm1', subject: '计算', tags: ['分数'], source: '作业本', ts: Date.now() - 86400000 },
+  { id: 'm2', subject: '语文', tags: ['错别字'], source: '听写', ts: Date.now() - 3600000 }
 ]
 
 const route = useRoute()
@@ -31,13 +31,13 @@ const explanation = ref('')
 onMounted(async () => {
   if (!useMock) {
     const res = await col('WRONGS').doc(id).get()
-    const d = res.data as unknown as { wrongType: string; source: string; createdAt: string }
-    raw.value = { id, wrongType: d.wrongType, tags: [], source: d.source, ts: new Date(d.createdAt).getTime() }
+    const d = res.data as unknown as { subject: string; source: string; createdAt: string }
+    raw.value = { id, subject: d.subject, tags: [], source: d.source, ts: new Date(d.createdAt).getTime() }
   } else {
     raw.value = mockWrongs.find(w => w.id === id) ?? mockWrongs[0]
   }
   // wireState 仍 mock：callLLM 返回占位串，不真发请求
-  explanation.value = await callLLM(`讲一讲这道${raw.value.wrongType}题`)
+  explanation.value = await callLLM(`讲一讲这道${raw.value.subject}题`)
 })
 </script>
 
@@ -55,7 +55,7 @@ onMounted(async () => {
 
     <!-- 原题小字：题型 + 来源 -->
     <div class="meta">
-      <span class="type">{{ raw.wrongType }}</span>
+      <span class="type">{{ raw.subject }}</span>
       <span class="src">{{ raw.source }}</span>
     </div>
 

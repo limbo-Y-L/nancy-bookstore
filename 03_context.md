@@ -109,6 +109,7 @@
 - 2026-10-21 ②-4c ProgressView补实（mock统计+数字卡，不调col()/callLLM）
 - 2026-10-21 ②-4末 三视图换线收口：useMock=wireState==='mock' 守门，col('WRONGS') 真读写路径就位，mock分支保留；wireState仍mock(G2-pending)；AtelierView加错题簿入口；🪶统一返回；主CSS哈希D8j5n5-K零漂
 - 2026-10-21 存档点：批次②-3 @d976f40；②-4三页接通待启（mock态先行，G2真LLM放行届时单独摆选项）
+- [2026-10-21] batch②-4.5 schema字段修正 wrongType→subject 归因维度拆出待②-5 PWA precache 920→176KiB
 
 ## §5 协同与回执状态（三协同审核闭环）
 
