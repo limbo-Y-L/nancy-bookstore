@@ -1,51 +1,17 @@
-'use strict'
-
-// functions/ocr/index.js
-// OCR 云函数入口（HTTP 触发）· 三档 mock 骨架（封存态：不接真实腾讯云、不读密钥、不引环境变量）
+// CloudBase 云函数 · ocr（一期降级桩）
+// 部署形态：普通 event 函数（tcb fn deploy，无需 scf_bootstrap / 无 +x 依赖）。
+// 调用方：前端经 CloudBase JS SDK app.callFunction({ name: 'ocr', data }) 调用（与 app.database() 同源同 SDK，
+//   不硬编码任何云厂商 endpoint / 不泄露凭据，符合前端红线）。
+// 契约锚：src/types/ocr.ts 的 OcrResponse
 //
-// 契约锁定：
-//   入：POST body { image: string(base64) }
-//   出：JSON { text: string, confidence: number, stage: string, source: "mock" }
-//   无 SecretId/Key 读取（避免误提交）
+// 一期不调真实 OCR API：任何请求一律返回 ocr-stub-fallback（空结果降级）。
+// 真实 OCR 凭据与 endpoint 留待后续切片在此处接入；前端侧绝不持有任何云厂商凭据/地址。
 //
-// 三档逻辑（严格原样，不发明）：
-//   L1 入参 {image:base64} → 直接返回 L1-mock
-//   L2 judgeStub：原 stub 判定分支原样，返回 L2-mock
-//   L3 静默回落：任何异常不抛、返回 L3-fallback + 空文本，前端不红屏
+// event 入参 data：{ imageCount?: number }（桩阶段忽略；真实 OCR 切片将接收 base64 图）。
 
-/** L1：入参即返回 mock 基线（骨架期不进真实链路） */
-function l1Mock() {
-  return { text: '', confidence: 0, stage: 'L1-mock', source: 'mock' }
-}
-
-/** L2：judge stub 判定分支（原样骨架，不发明真实判题） */
-function l2JudgeStub(image) {
-  // 占位分支：原 stub 的 no-image / 有图 两路，均回落 L2-mock
-  if (image === undefined || image === null) {
-    return { text: '', confidence: 0, stage: 'L2-mock', source: 'mock' }
-  }
-  return { text: '', confidence: 0, stage: 'L2-mock', source: 'mock' }
-}
-
-/** L3：静默回落（任何异常不抛，前端不红屏） */
-function l3Fallback() {
-  return { text: '', confidence: 0, stage: 'L3-fallback', source: 'mock' }
-}
-
-/** HTTP 触发入口：解析入参 → 走 L2 judge 分支；任何异常走 L3 静默回落 */
 exports.main = async (event, context) => {
-  try {
-    const body = typeof event.body === 'string'
-      ? JSON.parse(event.body || '{}')
-      : (event.body || {})
-    const image = body && body.image
-    return l2JudgeStub(image)
-  } catch (e) {
-    return l3Fallback()
+  return {
+    kind: 'ocr-stub-fallback',
+    reason: 'no-credential'
   }
 }
-
-// 暴露三档供自检（不打扰主链路）
-exports.l1Mock = l1Mock
-exports.l2JudgeStub = l2JudgeStub
-exports.l3Fallback = l3Fallback

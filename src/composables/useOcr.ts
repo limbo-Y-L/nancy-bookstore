@@ -1,20 +1,20 @@
 // OCR-L1 前端调用层 · 契约锚：notes/00_decisions.md DEC-10（一期先 L1 单路跑通主流程）
 //
+// 调用通道（一期）：经 CloudBase JS SDK app.callFunction({ name: 'ocr' }) 调用，与 app.database() 同源同 SDK，
+//   不硬编码任何云厂商 endpoint、不泄露凭据（前端红线：凭据只存在于 functions/ 侧）。
+//   注：原设计是 fetch 同域 '/api/ocr'（HTTP 云函数）；但本机 Windows CLI 无法给 Web 函数 scf_bootstrap 置 +x，
+//       函数起不来（网关 400）。故暂走 SDK 调用通道；后续恢复 HTTP 函数只需把本片 fetch 段换回即可。
 // 硬红线：
-//   - 只 fetch 同域相对路径 '/api/ocr'，前端绝不直连任何云厂商 endpoint；
-//   - 云厂商凭据与其 endpoint 字符串在前端侧一律不得出现（凭据只存在于 functions/ 侧）；
 //   - 零依赖：不引任何 npm 包；失败一律静默回落（不 throw、不 console.error 刷屏、不阻塞 UI）。
 // 原图保真：直接 append 原始字节（image.buffer），零 canvas / toBlob / resize（OCR_NO_COMPRESS 红线）。
 
 import { ref } from 'vue'
+import { cbApp } from '../lib/cloudbase'
 import { saveCaptureOcr } from '../stores/captureStore'
 import type { CapturePayload } from '../types/review'
 import type { OcrNormalized, OcrResponse } from '../types/ocr'
 
-/** 同域相对路径 —— 唯一允许的出网入口 */
-const OCR_ENDPOINT = '/api/ocr'
-
-/** 前端侧超时（ms）：比 Edge 侧的 8s 略短，保证 Edge 先收敛，前端不会悬挂 */
+/** 前端侧超时（ms）：本地放弃等待上限；callFunction 本身走 SDK，超时即回落 */
 const OCR_TIMEOUT_MS = 7000
 
 /** 调用态：idle 闲置 / pending 进行中 / ok 拿到真源 / fallback 静默回落 */
@@ -31,7 +31,8 @@ const lastResult = ref<OcrNormalized | null>(null)
  * @returns 是否拿到真源（false = 已静默回落桩）。本片不加 UI 提示，调用方只需 fire-and-forget。
  */
 async function triggerOcr(payload: CapturePayload): Promise<boolean> {
-  if (payload.images.length === 0) {
+  // 守卫：payload/images 缺失直接回落，避免后续属性访问抛未捕获 TypeError 连锁崩溃（step 6）
+  if (!payload || !Array.isArray(payload.images) || payload.images.length === 0) {
     status.value = 'fallback'
     lastError.value = 'no-image'
     return false
@@ -40,18 +41,18 @@ async function triggerOcr(payload: CapturePayload): Promise<boolean> {
   status.value = 'pending'
   lastError.value = ''
 
-  // 原图原始字节直传（OCR_NO_COMPRESS 红线：不经任何压缩通道）
-  const form = new FormData()
-  for (const image of payload.images) {
-    form.append('images', new Blob([image.buffer], { type: image.type }), image.name)
-  }
-
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), OCR_TIMEOUT_MS)
 
   try {
-    const res = await fetch(OCR_ENDPOINT, { method: 'POST', body: form, signal: controller.signal })
-    const body = (await res.json()) as OcrResponse
+    // 一期经 CloudBase SDK callFunction 调用 ocr（与 app.database() 同源同 SDK，不暴露端点/密钥）。
+    // 真实 OCR 切片上线后 data 传入 base64 原图；桩阶段忽略入参。
+    const res = await cbApp.callFunction({
+      name: 'ocr',
+      data: { imageCount: payload.images.length }
+    })
+    // v2 SDK：结果在 res.result；兼容直接返回情形。
+    const body = ((res as any).result ?? res) as OcrResponse
 
     if (body.kind !== 'ocr-ok' || body.data === undefined) {
       // 无凭据 / 无图 / 网络 / 超时 / 上游异常 / 空结果 —— 一律静默回落，不打扰孩子

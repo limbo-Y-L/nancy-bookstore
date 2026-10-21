@@ -1,0 +1,12 @@
+{
+  "envId": "nancy-bookstore-d3fnn33i4766c7dc",
+  "functionRoot": "functions",
+  "functions": [
+    {
+      "name": "ocr",
+      "runtime": "Nodejs20.19",
+      "handler": "index.main",
+      "timeout": 10
+    }
+  ]
+}
