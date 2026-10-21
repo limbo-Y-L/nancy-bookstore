@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import FoxHint from '../components/FoxHint.vue'
 import { col } from '@/lib/db'
 import { wireState } from '@/lib/llm'
+import { getFamilyCode } from '@/lib/family'
 import { saveLocalWrongs } from '@/lib/export'
 
 interface MockWrong {
@@ -48,7 +49,7 @@ const submitWrong = async () => {
     })
   } else {
     await col('WRONGS').add({
-      familyId: 'f_pending',
+      familyId: getFamilyCode(),
       source: text,
       answer: '',
       subject: formType.value,

@@ -1,6 +1,7 @@
 // 家庭码 · ②-5 设置抽屉
 // 守门（wireState='mock' 期间）：家庭码只落 localStorage，绝不触 col()、绝不外发、绝不进 URL。
 // 作用：替代登录体系 —— 家庭码即数据分区键（familyId），跨设备填同一个码就能找到孩子的记录。
+import { wireState } from './llm'
 
 const STORAGE_KEY = 'nancy-bookhouse.familyCode'
 
@@ -21,6 +22,17 @@ export function isValidFamilyCode(code: string): boolean {
   return /^[A-Z0-9]{8}$/.test(code)
 }
 
+/** live 态：把家庭码同步进 families 集合（best-effort，失败静默，不阻塞本地读写） */
+async function syncFamilyToCloud(code: string): Promise<void> {
+  if (wireState !== 'live') return
+  try {
+    const { col } = await import('./db')
+    await col('FAMILIES').add({ code, createdAt: new Date().toISOString() })
+  } catch {
+    /* 云端不可达：仅本地可用 */
+  }
+}
+
 /** 读取家庭码；没有就生成一枚并持久化（首次打开抽屉即落盘） */
 export function getFamilyCode(): string {
   try {
@@ -28,6 +40,7 @@ export function getFamilyCode(): string {
     if (saved && isValidFamilyCode(saved)) return saved
     const created = generateFamilyCode()
     localStorage.setItem(STORAGE_KEY, created)
+    void syncFamilyToCloud(created) // live 下同步落 families 集合
     return created
   } catch {
     // localStorage 不可用（隐私模式等）时退化为内存态，不抛栈
@@ -44,6 +57,7 @@ export function setFamilyCode(code: string): string {
   } catch {
     // 忽略：写不进去时仍返回规范化后的值，本次会话内有效
   }
+  void syncFamilyToCloud(normalized) // live 下同步落 families 集合
   return normalized
 }
 

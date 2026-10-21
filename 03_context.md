@@ -114,6 +114,7 @@
 - [2026-10-21] batch②-5 设置抽屉五区落位：家庭码8位(localStorage)/API Key(localStorage)/归因四选项(ADR-10补misread)/错题JSON导出; 设置入口⚙️(底栏三键零动·浮动钮); wireState='mock'守门未破·主CSS34,644B零漂移
 - [2026-10-21] batch②-6/②-6.1 星轨节点对齐修复+进度文案动态化(src/lib/progress.ts 新建·getProgress/setProgress；StarTrack 内缩轨道区+节点absolute定点；HomeShell 接动态文案)；wireState='mock'守门未破·主CSS 34820B·deploy index-brpbXruF.css
 - [2026-10-21] batch②-7 G2 闸门放行：src/lib/llm.ts wireState 'mock'→'live'，四集合(families/wrongs/profiles/plans)真读写激活；前端直连 CloudBase env nancy-bookstore-d3fnn33i4766c7dc(cbApp.init 字面量)；回滚=wireState 改回 'mock' 秒回·云端数据不丢
+- [2026-10-21] batch②-7.1 familyId plumbing：family.ts 生成/设置家庭码时写 families 集合(live·best-effort 静默兜底)；WrongsView col('WRONGS').add 与 progress.ts col('PLANS') 读写 'f_pending'→getFamilyCode()；四集合分区键全通；export.ts 已用真实码过滤(无需改)；冒烟3(families 写入)+冒烟5(导出含云端)应全绿；G2+②-7.1=云端全链路贯通
 
 ### 批次② 进度/状态表（2026-10-21 实测口径 · commit 均已核）
 
@@ -127,6 +128,7 @@
 | ②-5 | 设置抽屉五区 + 家庭码 + 导出 + 归因浮层 | ✅闭环 2026-10-21 | commit 1d32b14 | ADR-10 补 misread·守门未破 |
 | ②-6/②-6.1 | 星轨修复（对齐+文案动态化） | ✅闭环 2026-10-21 | commit f093ab7 | 主CSS 34820B·deploy index-brpbXruF.css |
 | ②-7/G2 | wireState 闸门放行 mock→live（四集合真读写激活） | ✅闭环 2026-10-21 | commit: feat(g2): wireState live | 回滚秒级：wireState='mock'；云端数据不丢 |
+| ②-7.1 | familyId plumbing：family.ts 写 families + wrongs/plans 'f_pending'→getFamilyCode() | ✅闭环 2026-10-21 | commit: ②-7 familyId plumbing | 四集合分区键全通；export 已对齐；云端全链路贯通 |
 
 ## §5 协同与回执状态（三协同审核闭环）
 
