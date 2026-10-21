@@ -111,6 +111,7 @@
 - 2026-10-21 存档点：批次②-3 @d976f40；②-4三页接通待启（mock态先行，G2真LLM放行届时单独摆选项）
 - [2026-10-21] batch②-4.5 schema字段修正 wrongType→subject 归因维度拆出待②-5 PWA precache 920→176KiB
 - [2026-10-21 EOB] ②-4全系上线收官：11提交push+deploy双完成; mock三页+换线骨架+工坊入口+可点返回+subject字段拆出+workbox排除cloudbase; 线上PWA 176KiB验证; G2/familyId/归因UI归②-5
+- [2026-10-21] batch②-5 设置抽屉五区落位：家庭码8位(localStorage)/API Key(localStorage)/归因四选项(ADR-10补misread)/错题JSON导出; 设置入口⚙️(底栏三键零动·浮动钮); wireState='mock'守门未破·主CSS34,644B零漂移
 
 ## §5 协同与回执状态（三协同审核闭环）
 

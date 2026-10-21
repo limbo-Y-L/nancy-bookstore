@@ -249,3 +249,16 @@ DEC-24：会话骨架草稿，未独立落盘，语义并入全局骨架备忘�
 - **HOW**：判据修正为「**主CSS大小不变 + 既有选择器逐字节未变 → 视觉零漂移**」；`data-v` 哈希变化在 eager 组件新增元素时**可豁免**。
   - 适用域：批次②-4末及后续含 eager 组件改动的派发。
   - 实测证据：与线上基线 `index-D8j5n5-K.css` 归一化 `data-v` 后**逐字节完全一致**。
+
+---
+
+## 数据字段补充决策 · 2026-10-21（DEC-2026-10-21-ADR10）
+
+[DEC-2026-10-21-ADR10] wrongType 枚举补 `misread`（审题偏差）
+- **WHAT**：`wrongs.wrongType` 枚举由三值 `concept|careless|method` 扩为四值 `concept|careless|method|misread`，与 DEC-15 归因四类（粗心失误 / 概念不清 / 方法不会 / 审题偏差）**全量对齐**；`spec/02_schema.md` 的 `[pending-attribution]` 标记解除。
+- **WHY**：②-5 设置抽屉的归因浮层已上线（卡片内「归因」→ 四选项），UI 产出第四类「审题偏差」若不在 schema 内，将构成"UI 有值、契约无值"的字段漂移；ADR-08 规定字段增删必须走 ADR，本条即该 ADR。
+- **HOW**：
+  1. `spec/02_schema.md` 的 `wrongs` 字段行 enum 补 `misread`，并追加 ADR-10 注释行（既有 EOB 注释行保留不动）；
+  2. UI 侧四选项键值固定为 `concept` / `careless` / `method` / `misread`（与枚举逐字一致，`src/views/WrongsView.vue` 归因浮层 + `src/views/SettingsDrawer.vue` 默认归因）；
+  3. 字段语义分工锁定：**`subject` = 学科维度**（计算/语文/英语/其他），**`wrongType` = 归因维度**（四类），二者不得混用。
+- 编号：与 DEC 顺延、不重号；ADR-08 / ADR-09 正文与编号段原样保留，本条独立成文不占号。

@@ -1,17 +1,27 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import FoxHint from '../components/FoxHint.vue'
 import { col } from '@/lib/db'
 import { wireState } from '@/lib/llm'
+import { saveLocalWrongs } from '@/lib/export'
 
 interface MockWrong {
   id: string
   subject: string
   tags: string[]
   source: string
+  wrongType?: string
   ts: number
 }
+
+// 归因四类（DEC-15 归因四类：概念不清 / 粗心失误 / 方法不会 / 审题偏差）
+const ATTR_OPTIONS = [
+  { key: 'concept', label: '概念不清' },
+  { key: 'careless', label: '粗心失误' },
+  { key: 'method', label: '方法不会' },
+  { key: 'misread', label: '审题偏差' }
+] as const
 
 // mock 态：本地数组，不接 col().add（真写入留②-4末统一换线）
 const mockWrongs = ref<MockWrong[]>([
@@ -54,6 +64,29 @@ const submitWrong = async () => {
 const router = useRouter()
 // 列表项 click → /explain? id=...（mock 态，不接 col()）
 const goExplain = (id: string) => router.push({ path: '/explain', query: { id } })
+
+// 归因浮层：当前正在归因的题 id（null = 关闭）
+const attrOpenId = ref<string | null>(null)
+
+/** 归因快捷切换：mock 态只切本地数组；real 态走 col().doc().update */
+const setAttribution = async (id: string, key: string) => {
+  if (useMock) {
+    const item = mockWrongs.value.find(w => w.id === id)
+    if (item) item.wrongType = key
+  } else {
+    await col('WRONGS').doc(id).update({ wrongType: key })
+  }
+  attrOpenId.value = null
+}
+
+// 本地镜像：mock 态数据同步给设置抽屉导出用（零 col()）
+watch(
+  mockWrongs,
+  v => {
+    if (useMock) saveLocalWrongs(v)
+  },
+  { deep: true, immediate: true }
+)
 </script>
 
 <template>
@@ -74,7 +107,31 @@ const goExplain = (id: string) => router.push({ path: '/explain', query: { id } 
           <span v-for="t in w.tags" :key="t" class="tag">{{ t }}</span>
           <span v-if="w.tags.length === 0" class="tag tag-empty">未分类</span>
         </div>
-        <div class="ts">{{ new Date(w.ts).toLocaleDateString() }}</div>
+        <div class="row-foot">
+          <span class="ts">{{ new Date(w.ts).toLocaleDateString() }}</span>
+          <!-- 归因快捷入口 · 四选项浮层（mock 态只切本地） -->
+          <button
+            class="attr-btn"
+            type="button"
+            :aria-expanded="attrOpenId === w.id"
+            aria-label="归因"
+            @click.stop="attrOpenId = attrOpenId === w.id ? null : w.id"
+          >
+            归因
+          </button>
+        </div>
+        <div v-if="attrOpenId === w.id" class="attr-pop" role="group" aria-label="归因选项">
+          <button
+            v-for="o in ATTR_OPTIONS"
+            :key="o.key"
+            type="button"
+            class="soft-card-tag attr-opt"
+            :class="{ picked: w.wrongType === o.key }"
+            @click.stop="setAttribution(w.id, o.key)"
+          >
+            {{ o.label }}
+          </button>
+        </div>
       </article>
     </div>
 
@@ -168,6 +225,48 @@ const goExplain = (id: string) => router.push({ path: '/explain', query: { id } 
   margin-top: var(--space-1);
   font-size: var(--font-sm);
   color: var(--color-ink-faint);
+}
+.row-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+.attr-btn {
+  border: 1px solid var(--color-line);
+  background: var(--color-primary);
+  color: var(--color-ink);
+  font-family: var(--font-family);
+  font-size: var(--font-sm);
+  border-radius: var(--radius-pill);
+  padding: 2px 12px;
+  cursor: pointer;
+}
+.attr-pop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+/* 归因胶囊 · 与 HomeShell / AtelierView / ArenaView 三处显式同源（7 项逐字符一致） */
+.attr-pop :deep(.soft-card-tag) {
+  background: rgba(232, 223, 245, 0.55);
+  color: #3a2e4d;
+  font-weight: 600;
+  font-family: var(--font-family);
+  padding: 4px 12px;
+  border-radius: 999px;
+  display: inline-block;
+}
+.attr-opt {
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-sm);
+}
+.attr-opt.picked {
+  background: var(--color-primary-deep);
+  color: var(--color-ink);
 }
 .foot-mark {
   align-self: flex-start;

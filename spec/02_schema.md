@@ -4,8 +4,9 @@
   _id(auto) | ownerId string | label string | createdAt ISO8601 | sealed boolean
 
 ## wrongs
-  _id | familyId ref | source text | answer text | subject enum('计算'|'语文'|'英语'|'其他') | wrongType enum('concept'|'careless'|'method') [pending-attribution] | tags string[] | reviewed boolean | createdAt | updatedAt
+  _id | familyId ref | source text | answer text | subject enum('计算'|'语文'|'英语'|'其他') | wrongType enum('concept'|'careless'|'method'|'misread') | tags string[] | reviewed boolean | createdAt | updatedAt
 <!-- 2026-10-21 EOB: subject字段已上线(②-4.5), wrongType pending-attribution归②-5归因UI -->
+<!-- 2026-10-21 ADR-10: wrongType enum 补 misread(审题偏差)·归因UI②-5已上线·pending-attribution标记解除 -->
 
 ## profiles
   _id | familyId ref | llmProvider string | modelTag string | preference json | lastSync ISO8601

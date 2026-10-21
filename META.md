@@ -42,6 +42,8 @@ D10 一句「续上」+粘贴即满血
 
 [2026-10-21补丁·BATCH-2-5-PREP] ②-5设置抽屉前置锚：familyId:f_pending占位确认归本批; 归因UI(wrongType四类)归②-5; G2闸门独立不并入; SDK chunk 761kB瘦身记独立步。
 
+[2026-10-21补丁·BATCH-2-5] 设置抽屉五区落位：家庭码8位(仅localStorage·替代登录体系) / API Key(仅localStorage) / 归因四选项(ADR-10补misread·与DEC-15归因四类全量对齐) / 错题JSON导出(本地镜像·real分支按familyId分区) / 关闭(ESC+按钮)。设置入口改⚙️(与家长态🪶解绑)，底栏三键零动、入口为底栏区上方浮动钮。守门：wireState='mock'期间全链路零col()真读写；主CSS 34,644B零漂移。
+
 [2026-10-21补丁·BATCH-2-4] 批次②-4收口：三视图(Wrongs/Explain/Progress)由mock本地态换线至 col('WRONGS') 真读写，单开关 useMock=wireState==='mock' 守门、mock分支保留可零成本回滚；wireState仍'mock'(G2未放)仅标G2-pending；AtelierView内容区加「错题簿→」#/wrongs入口(底栏零动)；三视图🪶统一 tabindex+click+enter→router.back()；主CSS哈希 index-D8j5n5-K 零漂移铁证。
 
 ════════════════════════════════════════════════════════════
@@ -85,7 +87,7 @@ Web+PWA壳Pad竖屏优先/手机并重/电脑兜底；全局聊天窗双态；�
 §C 下一步（当前真实待办 · 迁转⑬主线）
 
 近项① 批次① 底座通：CloudBase环境建好取环境ID → 静态壳推上出 *.tcloudbaseapp.com 链接 → ocr云函数迁入三档逻辑跑通（环境ID与托管域名已实测落定，见§B⑬） ✅闭环2026-10-21（环境/推壳/规约锁/OCR mock骨架/仓库卫生）
-近项② 批次② 核心闭环：四集合契约+db锚点+callLLM mock骨架+sync探针 ✅已落 ⏳待：②-4三页接通 / ②-5设置抽屉 / ②-6清账
+近项② 批次② 核心闭环：四集合契约+db锚点+callLLM mock骨架+sync探针 ✅已落 ⏳待：②-6清账（②-4三页接通 ✅ / ②-5设置抽屉 ✅）
 近项③ 旧链路清账：functions/ 实装退役、wrangler/_routes 口径作废、CF Dashboard 项目与密钥处置
 说明：封存态保留（v1.0 基线不回溯）；迁转⑬进行中；用户只拍板不答题；元宝不抢跑。
 
