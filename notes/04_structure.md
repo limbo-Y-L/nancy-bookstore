@@ -37,3 +37,14 @@
 - 本册只收**结构层软约束**，不装视觉值、不装业务逻辑。
 - 视觉值回链 `notes/00_decisions.md` 链路⑨ 专节；线框登记回链 `notes/01_wireframes.md`。
 - 封册信号：结构弹性三则被实际突破或被二期方案取代 → 文件头写 `status: sealed YYYY-MM-DD`。
+
+---
+
+## [2026-10-21 EOB] 迁转⑬进度锚
+
+- ②-1✅ ②-2✅ ②-3✅ ②-4a✅ ②-4b✅ ②-4c✅ ②-4末✅ ②-4.5✅
+- 线上: *.tcloudbaseapp.com (②-4.5 mock态, PWA 176KiB)
+- 源码: main分支 ahead 0 (11提交已push)
+- 下一刀: ②-5 设置抽屉(familyId+Key+导出+归因UI)
+- 闸门: G2(wireState='live')独立, 等②-5收完+真机冒烟绿
+- 挂件: SDK chunk瘦身(独立步) / 旧哈希prune(下次deploy)

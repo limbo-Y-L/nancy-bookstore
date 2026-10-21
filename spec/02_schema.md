@@ -5,6 +5,7 @@
 
 ## wrongs
   _id | familyId ref | source text | answer text | subject enum('计算'|'语文'|'英语'|'其他') | wrongType enum('concept'|'careless'|'method') [pending-attribution] | tags string[] | reviewed boolean | createdAt | updatedAt
+<!-- 2026-10-21 EOB: subject字段已上线(②-4.5), wrongType pending-attribution归②-5归因UI -->
 
 ## profiles
   _id | familyId ref | llmProvider string | modelTag string | preference json | lastSync ISO8601

@@ -38,6 +38,10 @@ D10 一句「续上」+粘贴即满血
 
 [2026-10-21补丁·BATCH-2-4.5] wrongs集合补subject字段(学科维度) wrongType归归因流程 pending-attribution; workbox排除cloudbase-*.js; 三视图全量替换
 
+[2026-10-21补丁·DEPLOY-EOB] ②-4全系上线：tcb hosting deploy dist 推壳成功(19文件), 线上运行②-4.5 mock态; git push origin main 11提交全同步(ahead 0); PWA precache 14/176.72KiB 生产验证; 旧哈希BG2KYkCA留待下次--safe --prune清; wireState='mock'守门云端零数据; 真机冒烟待执行。
+
+[2026-10-21补丁·BATCH-2-5-PREP] ②-5设置抽屉前置锚：familyId:f_pending占位确认归本批; 归因UI(wrongType四类)归②-5; G2闸门独立不并入; SDK chunk 761kB瘦身记独立步。
+
 [2026-10-21补丁·BATCH-2-4] 批次②-4收口：三视图(Wrongs/Explain/Progress)由mock本地态换线至 col('WRONGS') 真读写，单开关 useMock=wireState==='mock' 守门、mock分支保留可零成本回滚；wireState仍'mock'(G2未放)仅标G2-pending；AtelierView内容区加「错题簿→」#/wrongs入口(底栏零动)；三视图🪶统一 tabindex+click+enter→router.back()；主CSS哈希 index-D8j5n5-K 零漂移铁证。
 
 ════════════════════════════════════════════════════════════
