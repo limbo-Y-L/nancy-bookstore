@@ -76,6 +76,14 @@ setAttribution云端分支无try/catch，留待方向3。
 - 边界：不动错题兜底六点、不动 db.ts、不动云端规则、不删旧数据；三键（wrongs.live / attributions.live / storage.version）独立分区，纯 localStorage 零新依赖。
 - 已知小异常：`this.q.eq is not a function`（云端归因写路径 SDK 构造器不兼容，不阻塞，本地镜像已接管）。
 
+[2026-10-22补丁·BATCH-5-SDK-SPLIT] 方向5 SDK拆包闭环：
+- 目标主包 ≤150KB 达成：build 后 index-DtJPM8HJ.js = 129.3KB，cloudbase-CeMQE7wU.js = 743.8KB 独立 chunk。
+- 最小侵入做法：仅改 vite.config.ts，新增 build.rollupOptions.output.manualChunks: { cloudbase: ['@cloudbase/js-sdk'] }。
+- 偏差说明：原步骤①改 db.ts、步骤②改 cloudbase.ts 动态 import 被废弃——因 cbApp 是同步导出对象（WrongsView:186 / useOcr:50 / db.ts:46 同步消费），改动态会破坏 .vue 视图层，越红线。manualChunks 是 build-only 选项，serve 模式忽略，零回归。
+- workbox globIgnores 已含 '**/cloudbase-*.js'（vite.config.ts L103），无需再改。
+- 红线：未动 .vue / db.ts col()护栏 / cloudbase.ts 跳过逻辑 / RLS / 兜底六点 / 三键。未 commit / 未 deploy。
+- 构建：pnpm build 退出码0，106 modules transformed，PWA generateSW 正常，precache 19 entries (198.83KiB) 不含大 chunk。〔WB 回源复核：主包 129.3KB / cloudbase chunk 743.8KB / 预缓存 19 条且不含 cloudbase chunk，三项均实测相符；workbox 排除行实际在 vite.config.ts L103（新增 manualChunks 块后行号后移）〕
+
 [2026-10-22补丁·DEPLOY-TOPO-FINAL] 新环境 nancy-bookstore-prod-d4ab5d04b10 全量承载：终端 tcb hosting deploy dist 成功上传 **29 文件**（含 index.html、WrongsView 等），产物指纹 index-CVOhJrFG.js / index-B_fmRRmj.css（12:22 同指纹部署）。旧环境 d3fnn33i4766c7dc 进入归档态，不再接受新部署；壳与数据统一打新环境。双环境同指纹壳并存。
 
 [2026-10-22补丁·ENV-EXPIRY-FINAL] 新环境个人版到期日 **2026-11-22**，距今约一个月；到期前需用户手控续费或迁移（D1 元宝不代操作）。
@@ -112,7 +120,7 @@ Web+PWA壳Pad竖屏优先/手机并重/电脑兜底；全局聊天窗双态；�
      新环境 nancy-bookstore-prod-d4ab5d04b10 29文件同指纹（12:22）全量承载壳+数据，旧环境 d3fnn33i4766c7dc 归档。
      匿名登录跳过（initCloudBase=Promise.resolve()）；wireState='live'；云端anon读已放通（方向2 ✅，仅 SELECT 策略；写由 RLS 默认拒绝、本地兜底接管）。
      到期提醒：新环境 2026-11-22 到期。
-     方向2/3/4 已闭环上线（见 DIR3+4-CLOSED 补丁）；剩余方向2.5/5挂起。
+     方向2/3/4 已闭环上线（见 DIR3+4-CLOSED 补丁），方向5（SDK拆包·主包129KB）✅闭环；剩余方向2.5挂起。
   2026-10-21 批次②-3 收束 @d976f40：src/lib/llm.ts(callLLM mock骨架,wireState='mock') + src/lib/sync.ts(probe四集合成对add/remove静默零残留) + ADR-08补注消歧 + db.ts col() key-only签名护栏标为有意设计
   2026-10-22 托管拓扑：双环境同指纹壳并存 · 数据统一打 nancy-bookstore-prod-d4ab5d04b10 · 详见 DEPLOY-TOPO 补丁
 
@@ -124,8 +132,8 @@ Web+PWA壳Pad竖屏优先/手机并重/电脑兜底；全局聊天窗双态；�
   方向2 · 通云端（anon 读放通）✅ 闭环
   方向3 · 归因本地兜底 ✅ 闭环（本补丁）
   方向4 · 存储版本号 ✅ 闭环（本补丁）
+  方向5 · SDK拆包（manualChunks 单点，主包129KB）✅ 闭环
   方向2.5 · 绑自定义域名 ⏸ 挂起（需备案域名）
-  方向5 · SDK拆包 ⏸ 挂起（最后做，主包瘦身）
 
 ════════════════════════════════════════════════════════════
 
@@ -135,8 +143,8 @@ Web+PWA壳Pad竖屏优先/手机并重/电脑兜底；全局聊天窗双态；�
 近项② 批次② 核心闭环：✅全绿闭环（含②-4三视图/②-5设置抽屉/②-6星轨/错题本本地兜底/方向2通云端/方向3归因兜底/方向4版本号占位）。
 近项③ 旧链路清账：旧环境 d3fnn33i4766c7dc 标记归档，不再接受部署；functions/ 实装退役、wrangler/_routes 作废留待手清。
 后续可拾（用户拍板不答题）：
+  方向5 · SDK拆包 ✅ 闭环（manualChunks单点拆包，不懒加载）
   方向2.5 · 绑自定义域名 ⏸（需备案域名）
-  方向5 · SDK拆包 ⏸（最后做，主包瘦身）
   （方向2/3/4 已闭环，见 DIR3+4-CLOSED 补丁）
 说明：封存态保留（v1.0 基线不回溯）；迁转⑬进行中；用户只拍板不答题；元宝不抢跑。
 

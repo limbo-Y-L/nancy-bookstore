@@ -306,3 +306,19 @@ DEC-24：会话骨架草稿，未独立落盘，语义并入全局骨架备忘�
 > 落地实测（WB 回源核 · 2026-10-22）：commit `7ee57e5`「refactor: 方向3&4 归因本地兜底+存储版本号(v1.0.0)」已提交并部署；源码实测 `ATTR_KEY='nancy-bookhouse.attributions.live'` · `VERSION_KEY='nancy-bookhouse.storage.version'` · `CURRENT_VERSION='v1.0.0'` · `checkStorageVersion()` 于 onMounted 首行调用 · `applyAttrMirror(familyId)` 挂 loadLiveWrongs 末尾 · setAttribution 云端分支已带 try/catch（失败仅 warn(e.message)）。
 > 已知小异常：`this.q.eq is not a function`（云端归因写路径 SDK 构造器不兼容，不阻塞，本地镜像已接管）。
 > 编号：ADR07~ADR11 已占用，本条顺延为 **ADR-12**，不重号。
+
+---
+
+## DEC-2026-10-22-ADR13 · SDK拆包·build-only manualChunks
+
+**WHAT**：用 vite manualChunks 把 `@cloudbase/js-sdk` 从主包剥离成独立 chunk，主包 761KB→129KB。
+
+**WHY**：首屏 TTI 改善；同时避免改 cbApp 同步导出而破坏视图层红线。
+
+**HOW**：仅改 `vite.config.ts` 的 `build.rollupOptions.output.manualChunks`（`{ cloudbase: ['@cloudbase/js-sdk'] }`）；不动 db.ts / cloudbase.ts / 任何 .vue；workbox 已排除 cloudbase chunk。
+
+**边界**：不做真懒加载（需动 .vue），留待后续若首屏仍慢再评估 TLA 方案。
+
+> 落地实测（WB 回源核 · 2026-10-22）：`index-DtJPM8HJ.js` = **129.3KB**（主包，≤150KB 目标达成）· `cloudbase-CeMQE7wU.js` = **743.8KB** 独立 chunk · workbox `globIgnores` 含 `'**/cloudbase-*.js'`（**vite.config.ts L103**）· 本地 dist 预缓存 **19 条且不含 cloudbase 大 chunk**（实测）· 改动面仅 `vite.config.ts` 单点（`git diff` 确认 cloudbase.ts 的未提交改动属更早批次、与本条无关）。
+> 偏差留痕：原定步骤①（改 db.ts 动态 import）、②（改 cloudbase.ts 动态 import）**被废弃**——`cbApp` 为同步导出对象（WrongsView:186 / useOcr:50 / db.ts:46 同步消费），改动态将破坏 .vue 视图层、越红线；manualChunks 属 build-only 选项（serve 模式忽略），零回归。
+> 编号：ADR07~ADR12 已占用，本条顺延为 **ADR-13**，不重号。
