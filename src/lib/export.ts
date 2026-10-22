@@ -41,25 +41,31 @@ export function readLocalWrongs(): ExportWrong[] {
 /** 全量拉取：mock 走本地镜像；real 走 CloudBase 文档库并按 familyId（家庭码）分区过滤 */
 export async function pullAllWrongs(): Promise<ExportWrong[]> {
   if (wireState === 'mock') return readLocalWrongs()
-  const { col } = await import('./db')
-  const res = await col('WRONGS').where({ familyId: getFamilyCode() }).get()
-  const list =
-    (res.data as Array<{
-      _id: string
-      subject: string
-      tags?: string[]
-      source: string
-      wrongType?: string
-      createdAt: string
-    }>) || []
-  return list.map(d => ({
-    id: d._id,
-    subject: d.subject,
-    tags: d.tags ?? [],
-    source: d.source,
-    wrongType: d.wrongType,
-    ts: new Date(d.createdAt).getTime()
-  }))
+  try {
+    const { col } = await import('./db')
+    const res = await col('WRONGS').select().get()
+    const list =
+      (res.data as Array<{
+        id: string
+        subject: string
+        tags?: string[]
+        source: string
+        wrongType?: string
+        createdAt: string
+      }>) || []
+    return list.map(d => ({
+      id: d.id,
+      subject: d.subject,
+      tags: d.tags ?? [],
+      source: d.source,
+      wrongType: d.wrongType,
+      ts: new Date(d.createdAt).getTime()
+    }))
+  } catch (e: any) {
+    // 鉴权未通：降级为本地镜像，不阻断导出流程
+    console.warn('[Export] 云端读取失败，降级本地镜像', e)
+    return readLocalWrongs()
+  }
 }
 
 /** 组装导出 JSON：元信息（导出时间/家庭码/条数）+ 错题全量 */

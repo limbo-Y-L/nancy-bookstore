@@ -3,7 +3,6 @@
 // 守门：wireState 来自 llm.ts；mock 期间绝不静态 import db（仅 live 分支动态 import）。
 // 不新建 CSS 变量；不引新依赖。
 import { wireState } from './llm'
-import { getFamilyCode } from './family'
 
 export interface ProgressSnapshot {
   currentStage: number
@@ -34,7 +33,7 @@ export async function getProgress(): Promise<ProgressSnapshot> {
     // 进度快照暂落 PLANS（待 ADR 定稿）；familyId 现取 getFamilyCode() 真实分区键。
     try {
       const { col } = await import('./db')
-      const res = await col('PLANS').where({ familyId: getFamilyCode() }).get()
+      const res = await col('PLANS').select().get()
       const docs = res.data as Array<{ stage?: number; count?: number }>
       if (docs.length > 0) {
         const d = docs[0]
@@ -58,11 +57,11 @@ export function setProgress(stage: number, count: number): void {
     /* 静默 */
   }
   if (wireState === 'live') {
-    // real 态：落地 CloudBase（familyId 取 getFamilyCode() 真实分区键）；本地兜底已保证不丢。
+    // real 态：落地 CloudBase；family_id 由 db.ts 自动注入；本地兜底已保证不丢。
     import('./db')
       .then(({ col }) => {
         col('PLANS')
-          .add({ familyId: getFamilyCode(), stage, count, createdAt: new Date().toISOString() })
+          .insert({ stage, count, createdAt: new Date().toISOString() })
           .catch(() => {})
       })
       .catch(() => {})

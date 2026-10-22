@@ -27,7 +27,7 @@ async function syncFamilyToCloud(code: string): Promise<void> {
   if (wireState !== 'live') return
   try {
     const { col } = await import('./db')
-    await col('FAMILIES').add({ code, createdAt: new Date().toISOString() })
+    await col('FAMILIES').insert({ code, createdAt: new Date().toISOString() })
   } catch {
     /* 云端不可达：仅本地可用 */
   }

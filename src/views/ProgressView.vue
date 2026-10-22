@@ -26,14 +26,20 @@ const router = useRouter()
 
 onMounted(async () => {
   if (!useMock) {
-    const res = await col('WRONGS').get()
-    cloudWrongs.value = (res.data as Array<{ _id: string; subject: string; source: string; createdAt: string }>).map(d => ({
-      id: d._id,
-      subject: d.subject,
-      tags: [],
-      source: d.source,
-      ts: new Date(d.createdAt).getTime()
-    }))
+    try {
+      const res = await col('WRONGS').select().get()
+      cloudWrongs.value = (res.data as Array<{ id: string; subject: string; source: string; createdAt: string }>).map(d => ({
+        id: d.id,
+        subject: d.subject,
+        tags: [],
+        source: d.source,
+        ts: new Date(d.createdAt).getTime()
+      }))
+    } catch (e: any) {
+      // 读取失败：降级为空态，页面不报错红字
+      console.warn('[Progress] 云端读取失败，使用本地兜底', e)
+      cloudWrongs.value = []
+    }
   }
 })
 

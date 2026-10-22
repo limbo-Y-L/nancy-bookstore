@@ -30,9 +30,14 @@ const explanation = ref('')
 
 onMounted(async () => {
   if (!useMock) {
-    const res = await col('WRONGS').doc(id).get()
-    const d = res.data as unknown as { subject: string; source: string; createdAt: string }
-    raw.value = { id, subject: d.subject, tags: [], source: d.source, ts: new Date(d.createdAt).getTime() }
+    try {
+      const res = await col('WRONGS').select().eq('id', id).limit(1).get()
+      const d = (res.data[0] ?? {}) as { subject: string; source: string; createdAt: string }
+      raw.value = { id, subject: d.subject, tags: [], source: d.source, ts: new Date(d.createdAt).getTime() }
+    } catch (e: any) {
+      // 读取失败：保持 raw 为 mock 默认值，页面可用
+      console.warn('[Explain] 云端读取失败，使用本地兜底', e)
+    }
   } else {
     raw.value = mockWrongs.find(w => w.id === id) ?? mockWrongs[0]
   }

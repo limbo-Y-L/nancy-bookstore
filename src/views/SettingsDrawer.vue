@@ -28,11 +28,13 @@ const apiKey = ref('')
 const keyMsg = ref('')
 const defaultAttr = ref('')
 const exportMsg = ref('')
+const familyMsg = ref('')
 
 /** 从 localStorage 同步三项本地设置（不进 col） */
 const syncFromStorage = () => {
   familyCode.value = getFamilyCode()
   codeInput.value = ''
+  familyMsg.value = ''
   try {
     apiKey.value = localStorage.getItem(API_KEY_STORAGE) || ''
     defaultAttr.value = localStorage.getItem(ATTR_STORAGE) || ''
@@ -51,8 +53,10 @@ watch(
 )
 
 const applyCode = () => {
-  familyCode.value = setFamilyCode(codeInput.value)
+  const next = setFamilyCode(codeInput.value)
+  familyCode.value = next
   codeInput.value = ''
+  familyMsg.value = `已切换到家庭 ${next}`
 }
 
 const regenCode = () => {
@@ -133,6 +137,7 @@ const doExport = async () => {
         />
         <button class="btn" type="button" @click="applyCode">用这个</button>
       </div>
+      <p v-if="familyMsg" class="hint">{{ familyMsg }}</p>
     </section>
 
     <!-- 区二 · API Key -->

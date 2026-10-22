@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import FoxHint from '../components/FoxHint.vue'
 import { col } from '@/lib/db'
 import { wireState } from '@/lib/llm'
+import { cbApp } from '@/lib/cloudbase'
 import { getFamilyCode } from '@/lib/family'
 import { saveLocalWrongs } from '@/lib/export'
 
@@ -36,6 +37,54 @@ const formText = ref('')
 // 单开关：全三页共用；mock 分支完全保留，real 走 col('WRONGS').add（schema 见 spec/02_schema.md）
 const useMock = wireState === 'mock'
 
+// 批次③-1：live 态从 CloudBase 拉真实错题；mock 态保留本地数组（不接 col() 读，仅写走 col()）
+const liveWrongs = ref<Array<Record<string, any>>>([])
+const liveLoading = ref(false)
+const liveError = ref('')
+
+// 归因标签反查（key → 中文标签）
+const attrLabel = (key: string): string => {
+  const o = ATTR_OPTIONS.find(x => x.key === key)
+  return o ? o.label : key
+}
+
+// 列表统一出口：mock 走本地数组，live 走云端拉取（模板只认 displayList）
+const displayList = computed<Array<Record<string, any>>>(() =>
+  useMock ? (mockWrongs.value as unknown as Array<Record<string, any>>) : liveWrongs.value
+)
+
+const loadLiveWrongs = async () => {
+  liveLoading.value = true
+  liveError.value = ''
+  try {
+    const res = await col('WRONGS').select().order('createdAt', 'desc').limit(50).get()
+    const list = (res.data || []) as Array<Record<string, any>>
+    // 归一化：云端 _id → id（供 goExplain / setAttribution 复用既有逻辑）
+    list.forEach(w => { if (w._id && !w.id) w.id = w._id })
+    // 原图临时 URL：仅对带 imageFileID 的记录批量换取（不泄露 fileID，仅挂临时 URL）
+    const withImg = list.filter(w => w.imageFileId)
+    if (withImg.length) {
+      const tmp: any = await cbApp.getTempFileURL({ fileList: withImg.map(w => w.imageFileId) })
+      const urlMap = new Map<string, string>()
+      ;(tmp.fileList || []).forEach((f: any) => { if (f.fileID && f.tempFileURL) urlMap.set(f.fileID, f.tempFileURL) })
+      list.forEach(w => { if (w.imageFileId) w.imageUrl = urlMap.get(w.imageFileId) || '' })
+    }
+    liveWrongs.value = list
+  } catch (e: any) {
+    // 鉴权未通（如 LOGIN_MANNER_UNREGISTED / 400）：降级为空态，不显示红字
+    console.warn('[Wrongs] 云端读取失败，使用本地兜底', e)
+    liveWrongs.value = []
+  } finally {
+    liveLoading.value = false
+  }
+}
+
+// wireState 为 'live' 时挂载即拉取（ADR-07：无登录态依赖，直接读库）
+onMounted(() => {
+  if (useMock) return
+  loadLiveWrongs()
+})
+
 const submitWrong = async () => {
   const text = formText.value.trim()
   if (!text) return
@@ -48,13 +97,15 @@ const submitWrong = async () => {
       ts: Date.now()
     })
   } else {
-    await col('WRONGS').add({
+    await col('WRONGS').insert({
       familyId: getFamilyCode(),
       source: text,
       answer: '',
       subject: formType.value,
       tags: [],
       reviewed: false,
+      imageUrl: '',
+      imageThumbUrl: '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     })
@@ -69,13 +120,15 @@ const goExplain = (id: string) => router.push({ path: '/explain', query: { id } 
 // 归因浮层：当前正在归因的题 id（null = 关闭）
 const attrOpenId = ref<string | null>(null)
 
-/** 归因快捷切换：mock 态只切本地数组；real 态走 col().doc().update */
+/** 归因快捷切换：mock 态只切本地数组；live 态走 col().doc().update 并同步本地镜像 */
 const setAttribution = async (id: string, key: string) => {
   if (useMock) {
     const item = mockWrongs.value.find(w => w.id === id)
     if (item) item.wrongType = key
   } else {
-    await col('WRONGS').doc(id).update({ wrongType: key })
+    await col('WRONGS').eq('id', id).update({ wrongType: key })
+    const item = liveWrongs.value.find(w => w.id === id)
+    if (item) item.wrongType = key
   }
   attrOpenId.value = null
 }
@@ -95,22 +148,51 @@ watch(
     <header class="wrongs-head">
       <span class="back" aria-hidden="true">🪶</span>
       <h1 class="wrongs-title">错题本</h1>
+      <div
+        class="mode-tag"
+        :style="{
+          color: '#fff',
+          background: wireState !== 'mock' ? '#16a34a' : '#9ca3af',
+          padding: '2px 8px',
+          borderRadius: '4px',
+          fontSize: '12px',
+          fontWeight: 'bold',
+          position: 'absolute',
+          top: '8px',
+          right: '12px',
+          zIndex: 10,
+          boxShadow: '0 1px 3px rgba(0,0,0,.2)'
+        }"
+      >
+        {{ wireState !== 'mock' ? 'LIVE' : 'MOCK' }}
+      </div>
     </header>
 
-    <!-- 错题卡片列表 -->
+    <!-- 错题卡片列表（mock / live 统一出口 displayList） -->
     <div class="list">
-      <article v-for="w in mockWrongs" :key="w.id" class="wrong-card" @click="goExplain(w.id)">
+      <p v-if="!useMock && liveLoading" class="list-hint">正在从云端拉取错题…</p>
+      <p v-else-if="!useMock && liveError" class="list-hint list-hint-err">云端读取失败：{{ liveError.toString() }}</p>
+      <p v-else-if="displayList.length === 0" class="list-hint">还没有错题，记一题吧。</p>
+      <article
+        v-for="(w, i) in displayList"
+        :key="w.id"
+        class="wrong-card"
+        @click="goExplain(w.id)"
+      >
         <div class="row-top">
-          <span class="type">{{ w.subject }}</span>
-          <span class="src">{{ w.source }}</span>
+          <span class="type">题 {{ i + 1 }} · {{ w.subject }}</span>
+          <span class="src">{{ w.source || '' }}</span>
         </div>
+        <img v-if="w.imageThumbUrl" :src="w.imageThumbUrl" class="wrong-thumb" alt="缩略图" />
+        <span v-else class="no-img">无图</span>
         <div class="tags">
-          <span v-for="t in w.tags" :key="t" class="tag">{{ t }}</span>
-          <span v-if="w.tags.length === 0" class="tag tag-empty">未分类</span>
+          <span v-for="t in (w.tags || [])" :key="t" class="tag">{{ t }}</span>
+          <span v-if="w.wrongType" class="tag">{{ attrLabel(w.wrongType) }}</span>
+          <span v-if="(w.tags || []).length === 0 && !w.wrongType" class="tag tag-empty">未分类</span>
         </div>
         <div class="row-foot">
-          <span class="ts">{{ new Date(w.ts).toLocaleDateString() }}</span>
-          <!-- 归因快捷入口 · 四选项浮层（mock 态只切本地） -->
+          <span class="ts">{{ w.createdAt ? new Date(w.createdAt).toLocaleDateString() : (w.ts ? new Date(w.ts).toLocaleDateString() : '') }}</span>
+          <!-- 归因快捷入口 · 四选项浮层 -->
           <button
             class="attr-btn"
             type="button"
@@ -181,6 +263,26 @@ watch(
   font-weight: 600;
   color: #F5F0FA;
   font-family: var(--font-family);
+}
+.wrong-thumb {
+  margin-top: var(--space-2);
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  display: block;
+}
+.no-img {
+  margin-top: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--color-ink-faint);
+}
+.list-hint {
+  font-size: var(--font-sm);
+  color: var(--color-ink-soft);
+}
+.list-hint-err {
+  color: #b3453b;
 }
 .list {
   display: flex;
