@@ -48,3 +48,15 @@
 - 下一刀: ②-5 设置抽屉(familyId+Key+导出+归因UI)
 - 闸门: G2(wireState='live')独立, 等②-5收完+真机冒烟绿
 - 挂件: SDK chunk瘦身(独立步) / 旧哈希prune(下次deploy)
+
+---
+
+## [2026-10-22] 错题本链路结构备注（本地兜底双轨 · ADR-11）
+
+- 写链路: 记一题 → 本地 LS(nancy-bookhouse.wrongs.live) 即时 unshift → 尝试 col('WRONGS').insert → 失败降级本地 warn
+- 读链路: 页面加载 → readRawLocal 全量读 → 按 familyId 过滤 → dedupeById → isValidWrong 过滤 → 渲染；云端拉取失败不影响列表
+- 隔离键: localStorage.nancy-bookhouse.familyCode（8位，设置抽屉生成）
+- 去重键: createdAt + id(uuid)
+- 兜底边界: 归因按钮云端分支无 try/catch（方向3补）
+- 环境映射: 壳与数据最终统一在新环境 nancy-bookstore-prod-d4ab5d04b10；旧环境归档。
+- 本地兜底六点（对照 ADR-11）：①本地键全量读写跨family不覆盖 ②保留本地副本 ③createdAt去重 ④crypto.randomUUID防碰撞 ⑤isValidWrong渲染过滤 ⑥warn仅打e.message。

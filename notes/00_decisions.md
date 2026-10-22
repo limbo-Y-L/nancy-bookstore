@@ -262,3 +262,26 @@ DEC-24：会话骨架草稿，未独立落盘，语义并入全局骨架备忘�
   2. UI 侧四选项键值固定为 `concept` / `careless` / `method` / `misread`（与枚举逐字一致，`src/views/WrongsView.vue` 归因浮层 + `src/views/SettingsDrawer.vue` 默认归因）；
   3. 字段语义分工锁定：**`subject` = 学科维度**（计算/语文/英语/其他），**`wrongType` = 归因维度**（四类），二者不得混用。
 - 编号：与 DEC 顺延、不重号；ADR-08 / ADR-09 正文与编号段原样保留，本条独立成文不占号。
+
+---
+
+## DEC-2026-10-22-ADR11 · 本地兜底优先·未登录架构
+
+**WHAT**: 跳过匿名登录，前端以未登录身份访问 CloudBase，靠 family_code 分区 + RLS anon 策略 + 本地 LocalStorage 镜像兜底承载错题本读写。
+
+**WHY**: 匿名登录开关与 SDK 初始化反复 400；用户明确抗拒控制台手动操作；本地 familyId 已能完成隔离；把鉴权复杂度移出主链路，云端仅作可选同步层。
+
+**HOW（本地兜底六点）**:
+  ① 本地键 `nancy-bookhouse.wrongs.live`，全量读写跨 family 不覆盖（readRawLocal 读全量 + persistLocalWrongs 全量回写）；
+  ② 保留本地副本：云端成功不删本地（靠 createdAt 去重避免与云端同条重复显示）；
+  ③ createdAt 去重：loadLiveWrongs 合并时按 createdAt 剔除云端已存在的本地项；
+  ④ crypto.randomUUID() 防主键碰撞（替代 `'l' + Date.now()`）；
+  ⑤ isValidWrong 渲染过滤：无 id 或无 source/question/subject 的非标准对象不入渲染；
+  ⑥ warn 仅打 e.message（消除红色 Object 刷屏根因）。
+  写路径：本地先落盘 → 即时显示 → 尝试 col('WRONGS').insert（失败仅 warn 不抛红）；读路径：本地优先 → 云端拉取失败维持本地兜底。
+
+**边界**: setAttribution 云端分支暂未加兜底（方向3）；anon 读 RLS 未放通（方向2）；以上均为有意延期非缺陷。
+
+**不占号说明**: ADR-09 已被「视觉零漂移判据修正」占用，本决策顺延为 ADR-11。
+
+> 落地实测（WB 回源核 · 2026-10-22）：新环境 `nancy-bookstore-prod-d4ab5d04b10`（个人版·ap-shanghai·**2026-11-22 到期**）· `wrongs` 表 **16 列**、RLS **4 条策略**、`relrowsecurity=true`（实测 cols=16 / policies=4 / rls=true）· 托管 **29 文件**、域名 200、产物指纹 `index-CVOhJrFG.js` / `index-B_fmRRmj.css` 与旧环境**同指纹**。

@@ -48,6 +48,31 @@ D10 一句「续上」+粘贴即满血
 
 [2026-10-21补丁·BATCH-2-6] 星轨修复双段闭环：②-6定位修复（track-inner内缩9px+节点absolute定点+progress.ts动态文案占位替换）→ ②-6.1精准外科（取消内缩改relative 100% + rail inset 10px + 节点16px + calc定点left:10px/calc(100%-10px)），消除首尾节点圆心与轨道线端点9px偏差。新建src/lib/progress.ts(69行)·getProgress/setProgress·mock读localStorage(nancy_progress)·live动态import db查col('PLANS')·wireState守门。BUILD_EXIT=0·主CSS 34820B(+103B)·tcb deploy DEPLOY_EXIT=0·哈希index-brpbXruF.css。commit f093ab7推origin main。视觉验收通过。
 
+[2026-10-22补丁·BATCH-2-LOCAL-FALLBACK] 错题本本地兜底闭环：新环境 nancy-bookstore-prod-d4ab5d04b10（个人版·ap-shanghai·2026-11-22到期）建好，wrongs表16列+RLS4条落地（实测 cols=16/policies=4/rls=true）；cloudbase.ts跳过匿名登录（initCloudBase=Promise.resolve()），未登录身份走anon RLS+family_id隔离；WrongsView.vue加固——全量写回跨family不覆盖、保留本地副本、createdAt去重、crypto.randomUUID()防碰撞、isValidWrong渲染过滤、warn仅打e.message（消除红色Object刷屏根因）。本地pnpm dev全绿，pnpm build + tcb hosting deploy dist由用户手动部署成功，线上托管域名验收通过（记一题/强刷不丢/无红字；线上产物指纹与本地一致 index-CVOhJrFG.js / index-B_fmRRmj.css）。云端FetchError由本地兜底接管属预期，默认域名强制下载为平台策略非Bug。红线：未动db.ts的family_id注入、未自动build/commit/deploy。〔口径校正·WB回源实证：①调试console.log并未清空——src内仍留3处console.log（全在cloudbase.ts：env打印/跳过匿名登录/rdb探针成功）+6处console.warn（export.ts1、ExplainView1、ProgressView1、WrongsView3）+2处console.error（rdb致命探针）；②应用托管在旧环境域名 d3fnn33i4766c7dc-1511708160（200），新环境自有托管域名仅6个平台系统文件、根路径404 → 壳与数据分属两环境，非同一环境〕
+
+[2026-10-22补丁·DEPLOY-STATUS] ②-4.5之后实际交付修正：线上壳非mock态而是本地兜底真读写态；**wireState='live'**（G2已放行 @ef6baf1「ADR-07 family_id隔离替代匿名登录，放G2闸门」），mock仅存于 callLLM 占位与未开通云端鉴权场景；wrongs读写走 col('WRONGS')+本地镜像双轨。git提交与tcb部署均由用户手动执行，元宝未代跑。
+
+[2026-10-22补丁·BATCH-2-LOCAL-FALLBACK-v2] 错题本本地兜底闭环（校正版）：
+新环境 nancy-bookstore-prod-d4ab5d04b10(ap-shanghai)建好，wrongs表16列+RLS4条(rls=true)落地；
+cloudbase.ts跳过匿名登录(initCloudBase=Promise.resolve())，未登录身份走anon RLS+family_id隔离；
+WrongsView.vue六点加固全命中：本地键 nancy-bookhouse.wrongs.live、全量读写跨family不覆盖、createdAt去重、crypto.randomUUID()防碰撞、isValidWrong渲染过滤、warn仅打e.message（红色Object刷屏根因消除）。
+日志口径：WrongsView内业务调试log已清；基础设施探针保留(cloudbase.ts 3处console.log、全局6处warn、2处error)，非清理范围。
+主链 wireState='live'（G2闸门 ef6baf1 已放），mock仅callLLM占位；错题本读写走 col('WRONGS')+本地镜像双轨。
+setAttribution云端分支无try/catch，留待方向3。
+本地 pnpm dev 全绿；pnpm build 产物指纹 index-CVOhJrFG.js / index-B_fmRRmj.css 与两次托管部署完全一致。
+
+[2026-10-22补丁·DEPLOY-TOPO] 托管拓扑校正（2026-10-22 终端实证）：
+- 旧环境 d3fnn33i4766c7dc：首批推壳，托管产物完整，域名 nancy-bookstore-d3fnn33i4766c7dc-1511708160.tcloudbaseapp.com 可访问（偶发平台下载策略）。
+- 新环境 nancy-bookstore-prod-d4ab5d04b10：数据表 + 托管壳**均已就位**。终端 tcb hosting deploy dist 成功上传16文件（含 index.html、WrongsView 等），新托管域名 nancy-bookstore-prod-d4ab5d04b10-1511708160.tcloudbaseapp.com 具备完整应用产物。此前"新环境根路径404/仅6平台文件"为误判，以本次终端打勾为准。
+- 当前态：双环境同指纹壳并存，数据统一打新环境。旧环境进入归档态，不再接受新部署。
+- 默认域名 *.tcloudbaseapp.com 强制下载/中间页为平台策略，非代码Bug；正式分享需绑备案自定义域名（方向2.5）。
+
+[2026-10-22补丁·ENV-EXPIRY] 新环境个人版到期日 2026-11-22，距今约一个月。到期前需用户手控续费或迁移，元宝不代操作（D1）。
+
+[2026-10-22补丁·DEPLOY-TOPO-FINAL] 新环境 nancy-bookstore-prod-d4ab5d04b10 全量承载：终端 tcb hosting deploy dist 成功上传 **29 文件**（含 index.html、WrongsView 等），产物指纹 index-CVOhJrFG.js / index-B_fmRRmj.css（12:22 同指纹部署）。旧环境 d3fnn33i4766c7dc 进入归档态，不再接受新部署；壳与数据统一打新环境。双环境同指纹壳并存。
+
+[2026-10-22补丁·ENV-EXPIRY-FINAL] 新环境个人版到期日 **2026-11-22**，距今约一个月；到期前需用户手控续费或迁移（D1 元宝不代操作）。
+
 ════════════════════════════════════════════════════════════
 
 §A 项目背景 · 全局愿景层（跨迭代稳定）
@@ -75,10 +100,13 @@ Web+PWA壳Pad竖屏优先/手机并重/电脑兜底；全局聊天窗双态；�
   CAP-01→REV-01→REV-02→REV-03→TCH-01→PAR-01 全 impl-done @3463d76
   OCR-L1真源切片 ✓ · DEP CF锁定 ✓（ADR-03 限定为 CF 期封存史实，不约束演进方向） · git主链封口归零 ✓
   v1.0-nancy-bookhouse 封档无欠账。
-  ⑬ 架构迁转 ──────────────── ▶ 进行中 2026-10-21（CF → CloudBase · DEC-2026-10-21-ADR07）
-     四集合（families / wrongs / profiles / plans）+ family_code 分区 + callLLM 直连 + 本地缓存兜底；封存态保留不回溯
-     实测托管域名 https://nancy-bookstore-d3fnn33i4766c7dc-1511708160.tcloudbaseapp.com（2026-10-21 推壳首发·冒烟200）
+  ⑬ 架构迁转 ──────────────── ▶ 进行中 2026-10-22 更新：
+     错题本本地兜底六点全绿（见 ADR-11）：本地键 nancy-bookhouse.wrongs.live 全量读写跨family不覆盖 / 保留本地副本 / createdAt去重 / crypto.randomUUID()防碰撞 / isValidWrong渲染过滤 / warn仅打e.message。
+     新环境 nancy-bookstore-prod-d4ab5d04b10 29文件同指纹（12:22）全量承载壳+数据，旧环境 d3fnn33i4766c7dc 归档。
+     匿名登录跳过（initCloudBase=Promise.resolve()）；wireState='live'；云端anon读未放通留待方向2。
+     到期提醒：新环境 2026-11-22 到期。
   2026-10-21 批次②-3 收束 @d976f40：src/lib/llm.ts(callLLM mock骨架,wireState='mock') + src/lib/sync.ts(probe四集合成对add/remove静默零残留) + ADR-08补注消歧 + db.ts col() key-only签名护栏标为有意设计
+  2026-10-22 托管拓扑：双环境同指纹壳并存 · 数据统一打 nancy-bookstore-prod-d4ab5d04b10 · 详见 DEPLOY-TOPO 补丁
 
 ▸ 演进路标（仅锚方向，子阶段留白）
   二期 · 口语伴读/自适应出题/深度学情/习作 · 温故小灶六节点串行（🟡挂起非阻塞）
@@ -89,8 +117,14 @@ Web+PWA壳Pad竖屏优先/手机并重/电脑兜底；全局聊天窗双态；�
 §C 下一步（当前真实待办 · 迁转⑬主线）
 
 近项① 批次① 底座通：CloudBase环境建好取环境ID → 静态壳推上出 *.tcloudbaseapp.com 链接 → ocr云函数迁入三档逻辑跑通（环境ID与托管域名已实测落定，见§B⑬） ✅闭环2026-10-21（环境/推壳/规约锁/OCR mock骨架/仓库卫生）
-近项② 批次② 核心闭环：四集合契约+db锚点+callLLM mock骨架+sync探针 ✅已落 ⏳待：②-6清账（②-4三页接通 ✅ / ②-5设置抽屉 ✅）
-近项③ 旧链路清账：functions/ 实装退役、wrangler/_routes 口径作废、CF Dashboard 项目与密钥处置
+近项② 批次② 核心闭环：✅全绿闭环（含②-4三视图/②-5设置抽屉/②-6星轨/错题本本地兜底）。
+近项③ 旧链路清账：旧环境 d3fnn33i4766c7dc 标记归档，不再接受部署；functions/ 实装退役、wrangler/_routes 作废留待手清。
+后续可拾（用户拍板不答题）：
+  方向2 · 通云端（控制台手点）：安全域名加 localhost:5174 + 托管域名；WRONGS 表读 {read:true} 写微调；验证无 warn。
+  方向2.5 · 绑自定义域名：备案域名 → CNAME → HTTPS。
+  方向3 · 归因兜底（CB后续提示词）："在 src/views/WrongsView.vue 的 setAttribution 函数里，云端 updateDoc 外包独立 try/catch；失败存 localStorage `nancy-bookhouse.attributions.live`（按 familyId 分区，结构 { wrongId, wrongType, updatedAt }）；渲染时云端无值从本地补。不动主链、不动 db.ts、不加依赖。"
+  方向4 · 存储版本号（CB后续提示词）："WrongsView.vue 里 `nancy-bookhouse.wrongs.live` 读写值改 { v: 1, familyId, list: [...] }；readRawLocal 兼容纯数组迁移；写回始终新结构。不动云端字段。"
+  方向5 · SDK拆包（CB提示词+手动）："1. db.ts 静态 import 改函数内 await import；2. cloudbase.ts 懒加载；3. vite manualChunks 拆 @cloudbase/js-sdk；4. workbox globIgnores 排除 cloudbase chunk；5. build 验证主包回 ~130KB；6. 不动业务/RLS/兜底。" 手动：CB 跑 build，我手动 tcb hosting deploy dist。
 说明：封存态保留（v1.0 基线不回溯）；迁转⑬进行中；用户只拍板不答题；元宝不抢跑。
 
 ════════════════════════════════════════════════════════════
