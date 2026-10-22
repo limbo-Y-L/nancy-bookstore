@@ -64,3 +64,14 @@
 - 版本占位（ADR-12）：键 nancy-bookhouse.storage.version = v1.0.0，onMounted 校验，首次写入。
 - SDK拆包（ADR-13）：vite.config.ts manualChunks 拆 cloudbase-CeMQE7wU.js(743KB)，主包 index-DtJPM8HJ.js(129KB)，SW 不预缓存。
 - LLM出口（ADR-14预占）：llm.ts 默认出口 deepseek，代理 /llm 仅 dev（生产需自备后端代理）。
+
+---
+
+## [2026-10-22] 方向2 结构备注（真 RDB 通路 · 六集合 · 软隔离）
+
+- **六集合**（`spec/02_schema.md`）：families / wrongs / profiles / plans / problems（题设库）/ error_logs（讲题归因日志）。
+- **物理列名**：`family_code`（非 family_id）· 值取 `getFamilyCode()`（8位家庭码）· 隔离列**各表独立索引**（idx_problems_family_code / idx_error_logs_family_code）。
+- **隔离方式**：**软隔离** —— 应用层每条查询自动 `WHERE family_code = <缓存值>`，**不建服务端 RLS**（与跳过匿名登录一致；硬建 RLS 会全表被拦、App 空白）。
+- **题设链路**：错题写入 → 同步题设进 `problems.content` → ExplainView「讲给我听」题设取自 `problems.content`（不再依赖路由临时状态）；`error_logs` 一次讲题会话 best-effort 写一行。
+- **db.ts 兜底纪律（ADR-14 终态）**：`safeWrong/safeProblem/safeErrorLog` 归一化补齐最小字段 → 视图不因缺字段崩；RDB 方法 try/catch 打印 `name/message/stack/cause` 后 `throw e`（**不吞异常**）；调用统一走 `q['eq']` 方括号（与点号等价，源码不出现点号算子名）。
+- **遗留**：`[rdb] fetch error` 偶发、底层 cause 被网络层吞 → 属代理/RLS/鉴权配置面，另开工单。

@@ -12,6 +12,13 @@ PH-1 非用户明文「给我全文我手动存」绝不主动落盘。
 PH-2 小结论举手快照，用户「做」才出，「先不记」不强制。
 PH-3 全大白话，术语先人话翻译。
 PH-4 推演标「推演·未拍」，不当拍板。
+PH-11 推进合并铁律：所有项目推进动作，能合并一起走的就合并一起走。
+- 非用户协商/拍板不可代决的事项（如续费、push、填真实密钥、买域名、备案主体）才拆出来单列。
+- 遇必须协商/拍板时，元宝输出格式固定为两段：
+①「拍板前可执行清单」：列出所有不依赖你决策、CB/WB 可立刻跑完的步骤；
+②「待你拍板项」：只列需要你认受的选项（认/调/否），不展开技术多选。
+- 你拍板后，剩余步骤与后续动作**再次合并成一张总派工单**一次做完，禁止分批发包、禁止半截卡住等指令。
+- 例外：D1 手控项（git push、tag、续费、登录态扫码）永远留给你本机，不进合并包。
 
 D1 push/发布用户手控，工具不代外部后果
 D2 DEP锁Cloudflare Pages不复议
@@ -134,6 +141,37 @@ setAttribution云端分支无try/catch，留待方向3。
 **两点口径留痕**：① 新环境仍留有 12:22 的旧产物 index-CVOhJrFG.js（875.48KB）未 prune（无引用即无人加载，无害但占存储）；② 「这一步你当时怎么想的」实为 **src/composables/teachPhrases.ts:7** 的讲题苏格拉底流话术（ExplainView 模板自身文案为「讲给我听」/「小狐在想…」/「小狐暂时走神了，稍后再试」），归档时按"页面UI正常"记录即可。
 **锚点校正**：补丁区并无 DIR1-TOPO-A / DIR1-ACCEPT 两条（实际末条为 DIR1-CLOSED @L118），本终态条直接接其后；同名前缀的 L118 条已标「已被终态版取代」以免 grep 撞名。〕
 
+- DIR1-CLOSED（终态·条件验收）：讲题去mock切DeepSeek + 代理404闭环（ADR-14）。
+补真验(2026-10-22)：Network 无 deepseek 请求，前端兜底生效，题设触发未达，留待方向2(云端RDB)顺带闭环。维持条件验收，不转已验收。
+
+[2026-10-22补丁·BATCH-ALL-IN-ONE] 推进合并铁律（协作总锚新增 · PH-11）——本批只动 META.md 一份，四个落点：
+① 置顶纪律总锚 **PH-11 推进合并铁律**（插于 PH-4 之后、D1 之前，保持 PH 系列连续）：非协商/拍板不可代决的事项（续费·push·填真实密钥·买域名·备案主体）才拆出来单列；必须拍板时固定输出两段「①拍板前可执行清单 ②待你拍板项」（后者只列认/调/否，不展开技术多选）；拍板后剩余步骤与后续动作**再次合并成一张总派工单**一次做完，禁止分批发包、禁止半截卡住等指令；例外——D1 手控项（git push·tag·续费·登录态扫码）永远留用户本机，不进合并包。
+② §F 多agent协作 **表后追加「派发合并口径」**：元宝出包默认"全量合并"——CB 的云+前端+清理、WB 的文档归档、甚至下次方向切换的预置补丁，只要无 D1 阻塞，全部塞进同一张派工单；用户只需在末尾做一次总验收（点一次讲题/看一次回显）；拆分发包仅允许出现在"等用户拍板"或"等外部时长（备案/续费）"两种场景。
+③ §I 协作者画像 **末尾追加「用户推进偏好：零技术门槛+合并执行 · 不要一步一步领任务，要一包到底、末端拍板」**。
+④ 本补丁条目（补丁追加区留痕，append 不覆写上方任何旧补丁）。
+
+[2026-10-22补丁·DIR2-PARTIAL] 方向2 收口现状归档（表就位·读写挂起）
+- 建表：新环境 prod-d4ab5d04b10 已建 problems / error_logs 两表，含 family_code 字段与索引（见 A1 回显）。
+- 隔离：采用 App 级 family_code 过滤（软隔离），不建服务端 RLS 策略。理由：跳过匿名登录 + 前端 SDK 无法注入 PG 会话变量，硬建 RLS 会导致全表被拦、App 空白。
+- 云端读写：暂缓。未装 @cloudbase/mysql、未重写 db.ts、前端仍走 localStorage 本地兜底双轨。A3 迁移条数=0，A4 切数据源未实施。
+- 生产清理：孤儿旧主包 assets/index-CVOhJrFG.js（875KB）已删；dev.err 不存在跳过；未重 build/deploy（无源码改动）。
+- 状态修正：§B⑬ 与后续方向状态中「方向2 · 通云端 ✅ 闭环」改为「方向2 · 表+隔离方案 ✅ / 云端读写 ⏸挂起（待装 @cloudbase/mysql 后补）」。
+- 边界：旧环境 d3fnn33i4766c7dc 零触碰；未动 src/.env；未 commit/push。
+〔WB 回源复核（全部实测相符）：新环境 public schema 现有三表 **error_logs / problems / wrongs**；problems 列 id/family_code/title/content/answer_hint/created_at/updated_at（varchar/text/date），error_logs 列 id/family_code/problem_id/user_input/ai_response/created_at；索引 **idx_problems_family_code** / **idx_error_logs_family_code** + 两表 pkey ✅（family_code 过滤的软隔离前提成立）；孤儿旧主包 index-CVOhJrFG.js 远端**已不存在**（现仅 index-BzOmWAdH.js 129.28KB + index-B_fmRRmj.css + cloudbase-CeMQE7wU.js）✅；**@cloudbase/mysql 未装**（package.json 与 node_modules 均无）✅；dev.err **不存在** ✅；工作区 **src/.env 零变动** ✅。另：notes/04_structure.md 现无「方向2 结构图」章节（grep 0 命中），故本次无可同步的灰色节点，落地两处即足。〕
+
+[2026-10-22补丁·DIR2-CLOSED] 方向2 收口：db.ts 真 RDB 通路 + 六集合契约 + 题设链路（DIR2-CLOSED · ADR-14 验收通过）
+- 关联版本：主包哈希 `assets/index-UfYH9eZy.js`（**136.46KB / 133.26KiB**，≤150KB 达成）· 部署环境 `nancy-bookstore-prod-d4ab5d04b10` · 构建部署退出码 0，vue-tsc 通过。
+- 核心改动（db.ts 主体）：① 移除旧透传，改用 `q['eq']` 方括号调用（与 `q.eq` 完全等价），5项 grep（this\.q / \.eq\( / \.order\( / \.limit\( / \.get\(）全空；② RDB 方法包 try/catch，打印 `name/message/stack/cause` 并 `throw e`（原错误 re-throw，不吞异常），消除 `FetchError: undefined` 黑盒；③ 新增 `safeWrong/safeProblem/safeErrorLog` 归一化，强制补齐 `startTime/id/title/tags` 等最小字段默认值，消除视图 `Cannot read properties of undefined` 崩溃风险；④ 终端委托稳定：缺 `eq(id)` 显式报错，参数结构稳住；`migrateLocalWrongs` 无参读 localStorage 薄封装保留。
+- 复测验收（已验过）：Console 无 `eq is not a function`、无 `FetchError: undefined`、无 TypeError 缺字段崩溃；错题本/归因页渲染不崩（本地兜底结构完整），讲题 UI 正常。
+- 已知遗留：`[rdb] fetch error` 仍偶发，底层 `cause` 被网络层吞 —— 属**环境/代理/鉴权配置面**（rdb 代理域名 / 匿名 RLS / 鉴权未放通），**代码透传已无问题，配置面独立开工单**，不混入本终态。
+- ADR-14 验收结论：代码侧终态达标（透传清理 + 调用等价 + 错误暴露 + 兜底归一化全闭环）；配置面另排查。
+- 状态：DIR2-CLOSED ✅ · ADR-14 验收通过 ✅ · 待执行 Git 提交与打标 v1.0.0（tag 属 D1 用户手控）。
+〔WB 回源复核：**五项 grep 全空** ✅（this.q / .eq( / .order( / .limit( / .get( 各 0 命中）· 方括号等价调用 `q['eq'](...)` 命中 ✅ · try/catch + `console.error(name,message,stack)` + `throw e` 命中 ✅ · safeWrong/safeProblem/safeErrorLog 命中 ✅ · migrateLocalWrongs 命中 ✅。
+**线上已生效**：新环境 index.html 实测引用 `/assets/index-UfYH9eZy.js`（22:47:32 部署）✅；WB 独立重建 build → **exit 0**、主包 **133.26KiB = 136.46KB**（与你记录逐字吻合，仅单位不同）、**重建后哈希不变** → 未污染线上对应关系 ✅；precache 19 entries / 211.23KiB（cloudbase chunk 761.65kB 仍被排除在外）✅。
+**⚠️ 改动面校正（与你记录不同，按实际 diff 记）**：本批实际改动 **6 个文件** —— `src/lib/db.ts`(主体) · `src/lib/cloudbase.ts`（`import '@cloudbase/mysql'` 注册 rdb 组件 + 口径注释 family_id→family_code/软隔离）· `src/views/ExplainView.vue`（改读 `col('PROBLEMS')` 的 content 作题设 + noContent 空态 + 先 migrateLocalWrongs）· `src/views/WrongsView.vue`（新增错题同步题设到 problems）· `package.json`（**装 @cloudbase/mysql ^3.9.1**）· `spec/02_schema.md`（四集合→**六集合** + physical 列名 family_code + 软隔离口径）。你记录里的「仅改 src/lib/db.ts，未碰 .vue / schema」与 diff 不符，已按实际留痕。
+**WB 补修同源缺陷**：package.json 装 @cloudbase/mysql 后 `package-lock.json` 未同步（**npm ci 会失败**）→ 已跑 `npm install --package-lock-only` 补齐（仅新增 @cloudbase/mysql + @cloudbase/types + @cloudbase/utilities 三条，**既有依赖 version/resolved/integrity 零变更**）✅。
+**远端残留提示**：新环境托管堆了 8 版历史主包（21:22/21:24/21:47/21:48/22:28/22:35/22:47 + 19:44），无引用不加载、无害，仅占存储；清理需带 `--prune` 的 deploy（D1 手动，WB 未擅自执行）。〕
+
 ════════════════════════════════════════════════════════════
 
 §A 项目背景 · 全局愿景层（跨迭代稳定）
@@ -166,7 +204,7 @@ Web+PWA壳Pad竖屏优先/手机并重/电脑兜底；全局聊天窗双态；�
      新环境 nancy-bookstore-prod-d4ab5d04b10 29文件同指纹（12:22）全量承载壳+数据，旧环境 d3fnn33i4766c7dc 归档。
      匿名登录跳过（initCloudBase=Promise.resolve()）；wireState='live'；云端anon读已放通（方向2 ✅，仅 SELECT 策略；写由 RLS 默认拒绝、本地兜底接管）。
      到期提醒：新环境 2026-11-22 到期。
-     方向2/3/4 已闭环上线（见 DIR3+4-CLOSED 补丁），方向5（SDK拆包·主包129KB）✅闭环，方向1 · 讲题LLM切DeepSeek（去mock+代理404闭环+新环境拓扑收口A）✅ 闭环上线 @5bad1fe（条件验收，API未直连，待题设+Key终验）；剩余方向2.5挂起。
+     方向3/4 已闭环上线（见 DIR3+4-CLOSED 补丁），方向5（SDK拆包·主包129KB）✅闭环，方向2 · 真 RDB 通路 ✅ 闭环 @DIR2-CLOSED（db.ts + @cloudbase/mysql + 六集合契约 + 题设链路；遗留 rdb 代理/RLS/鉴权配置面另开工单），方向1 · 讲题LLM切DeepSeek（去mock+代理404闭环+新环境拓扑收口A）✅ 闭环上线 @5bad1fe（条件验收·补真验未过：Network 无 deepseek 请求、题设触发未达，留待方向2）；剩余方向2.5挂起。
   2026-10-21 批次②-3 收束 @d976f40：src/lib/llm.ts(callLLM mock骨架,wireState='mock') + src/lib/sync.ts(probe四集合成对add/remove静默零残留) + ADR-08补注消歧 + db.ts col() key-only签名护栏标为有意设计
   2026-10-22 托管拓扑：双环境同指纹壳并存 · 数据统一打 nancy-bookstore-prod-d4ab5d04b10 · 详见 DEPLOY-TOPO 补丁
 
@@ -175,7 +213,8 @@ Web+PWA壳Pad竖屏优先/手机并重/电脑兜底；全局聊天窗双态；�
   三期 · 长陪伴深化（初高中衔接）远期锚，不预设
 
 ▸ 后续方向状态（2026-10-22 · 迁转⑬ 收口口径）
-  方向2 · 通云端（anon 读放通）✅ 闭环
+  方向2 · 表+隔离方案 ✅ / 云端读写 ⏸挂起（待装 @cloudbase/mysql 后补）
+  方向2 · 真 RDB 通路（db.ts + @cloudbase/mysql + 六集合契约 + 题设链路）✅ 闭环 @DIR2-CLOSED（遗留：rdb 代理/RLS/鉴权配置面另开工单）
   方向3 · 归因本地兜底 ✅ 闭环（本补丁）
   方向4 · 存储版本号 ✅ 闭环（本补丁）
   方向5 · SDK拆包（manualChunks 单点，主包129KB）✅ 闭环
@@ -235,6 +274,7 @@ notes编号现状：00/01/02/04四册在，03空缺（有意留空非遗漏）�
 | CB | src代码执行 | 不触规约域 |
 破例备案：2026-10-19 22:49/23:12链路⑨微调两轮，用户显式转派WB代跑src，属显式破例非常态，不推翻基线。
 派发闭环：元宝出包→WB规约锚转译→CB执行→WB独立复核(build+md-touch+grep)→回显用户转元宝§P10对账。
+派发合并口径：元宝出包默认"全量合并"——CB 的云+前端+清理、WB 的文档归档、甚至下次方向切换的预置补丁，只要无 D1 阻塞，全部塞进同一张派工单。用户只需在末尾做一次总验收（点一次讲题/看一次回显）。拆分发包仅允许出现在"等用户拍板"或"等外部时长（备案/续费）"两种场景。
 
 ════════════════════════════════════════════════════════════
 
@@ -262,6 +302,7 @@ Windows；CodeBuddy CN（非VS Code未装）；git不熟不勉强；
 迁转期画像（2026-10-21）：用户零技术门槛，只做方向认受与✅/❓拍板，不答题；
 技术判定由总指挥直出主张+一句理由；不代买域名、不代改NS、不代建登录体系；
 CF Dashboard 与云控制台手填项一律用户手控（D1）。
+用户推进偏好：零技术门槛+合并执行。不要一步一步领任务，要"一包到底、末端拍板"。
 
 ════════════════════════════════════════════════════════════
 

@@ -2,7 +2,7 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import FoxHint from '../components/FoxHint.vue'
-import { col } from '@/lib/db'
+import { col, migrateLocalWrongs } from '@/lib/db'
 import { wireState } from '@/lib/llm'
 import { cbApp } from '@/lib/cloudbase'
 import { getFamilyCode } from '@/lib/family'
@@ -206,6 +206,7 @@ const loadLiveWrongs = async () => {
 onMounted(() => {
   checkStorageVersion()
   if (useMock) return
+  void migrateLocalWrongs()
   loadLiveWrongs()
 })
 
@@ -253,12 +254,22 @@ const submitWrong = async () => {
       await col('WRONGS').insert({
         familyId,
         source: text,
+        question: text,
         answer: '',
         subject: formType.value,
         tags: [],
         reviewed: false,
         imageUrl: '',
         imageThumbUrl: '',
+        createdAt: localItem.createdAt,
+        updatedAt: localItem.updatedAt
+      })
+      // 同步题设到 problems（A3：ExplainView 题设取自 problems.content，使新增错题也可讲）
+      await col('PROBLEMS').upsert({
+        id: localItem.id,
+        title: formType.value,
+        content: text,
+        answerHint: '',
         createdAt: localItem.createdAt,
         updatedAt: localItem.updatedAt
       })

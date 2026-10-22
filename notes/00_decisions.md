@@ -354,5 +354,9 @@ DEC-24：会话骨架草稿，未独立落盘，语义并入全局骨架备忘�
 - 排错：prod有Key但API未连上=无直连请求，查题设上下文/触发状态；dev报localhost/llm连接拒绝=无Key回落代理→填Key或仅dev代理。
 
 > 状态：已定稿 · 2026-10-22 · 真机验收通过（小狐开口+Network 200）· commit 5bad1fe 上线。
+> **状态**：条件验收（补真验未过，留待方向2）
 > · 终态归档（条件验收）@2026-10-22：拓扑收口A完成；生产讲题依赖设置抽屉 Key（localStorage）+题设上下文，实测 API 未连上（请求未发）；代理仅 dev。
+> **状态（2026-10-22 终态）**：✅ **验收通过** —— 代码侧终态达标：透传清理（`q['eq']` 方括号等价调用，5项 grep 全空）+ 真实错误暴露（try/catch 打印 name/message/stack/cause 后 `throw e`，不吞异常）+ 兜底归一化（safeWrong/safeProblem/safeErrorLog 强制补齐最小字段，消除视图 `Cannot read properties of undefined`）三件闭环。复测：Console 无 `eq is not a function`、无 `FetchError: undefined`、无 TypeError 缺字段崩溃；错题本/归因页渲染不崩，讲题 UI 正常。主包 `assets/index-UfYH9eZy.js` = 136.46KB（≤150KB），部署环境 prod-d4ab5d04b10，构建部署退出码 0。
+> **遗留（另开工单，不混入本终态）**：`[rdb] fetch error` 仍偶发，底层 `cause` 被网络层吞 —— 属**环境/代理/鉴权配置面**（rdb 代理域名 / 匿名 RLS / 鉴权未放通）；代码透传已无问题。
+> **补充记录 (2026-10-22)**：补真验(2026-10-22)：Network 无 deepseek 请求，前端兜底生效，题设触发未达，留待方向2(云端RDB)顺带闭环。关联提交：d0b3916（终态归档），5bad1fe（去mock切DeepSeek）。
 > WB 回源复核（四组均实测相符）：llm.ts L40 `VITE_LLM_BASE_URL` 优先 → L42 DEV `'/llm/chat/completions'`（无 /v1）→ L43 PROD `'https://api.deepseek.com/v1/chat/completions'`；vite.config.ts L50 target `'https://api.deepseek.com/v1'` + L53 rewrite 去 `/llm`；.env 现有键仅 VITE_LLM_PROVIDER / VITE_LLM_API_KEY / VITE_LLM_MODEL，**不含 VITE_LLM_BASE_URL**（严禁项已落实；密钥留在被 gitignore 的 .env，未入库）。

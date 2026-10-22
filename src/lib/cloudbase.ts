@@ -4,6 +4,8 @@
 // env 为字面量环境 ID，不引 process.env（浏览器直跑无 node env）。
 // 注：@cloudbase/js-sdk v2 以默认导出 `cloudbase` 暴露 `cloudbase.init(...)`（非 initCloudBase 具名导出）
 import cloudbase from '@cloudbase/js-sdk'
+// 关系型通路：注册 rdb（PostgreSQL）组件，使 cbApp.rdb() 可用（@cloudbase/mysql 的副作用）。
+import '@cloudbase/mysql'
 
 /** 环境 ID / 地域：来自 .env（VITE_TCB_ENV / VITE_TCB_REGION），默认上海 */
 const TCB_ENV = import.meta.env.VITE_TCB_ENV
@@ -17,7 +19,7 @@ export const cbApp = cloudbase.init({
   region: TCB_REGION
 })
 
-/** ADR-07：业务仍以 family_id（localStorage 家庭码）隔离；跳过匿名登录，以未登录身份发起请求，配合 PG 的 anon RLS 策略 + family_id 隔离 */
+/** ADR-07：业务以 family_code（localStorage 家庭码）隔离；跳过匿名登录，以未登录身份发起请求；软隔离（应用层 WHERE family_code，不建服务端 RLS） */
 console.log('[tcb] 使用 family_code 隔离，跳过匿名登录')
 
 /** 初始化就绪：跳过匿名登录，直接就绪（未登录身份走 RLS anon 策略 + family_id 隔离） */

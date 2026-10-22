@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FoxHint from '../components/FoxHint.vue'
 import { callLLM, wireState } from '@/lib/llm'
-import { col } from '@/lib/db'
+import { col, migrateLocalWrongs } from '@/lib/db'
 
 interface MockWrong {
   id: string
@@ -28,13 +28,27 @@ const useMock = wireState === 'mock'
 const raw = ref<MockWrong>(mockWrongs[0])
 const explanation = ref('')
 const loading = ref(false)
+const noContent = ref(false)
 
 onMounted(async () => {
   if (!useMock) {
     try {
-      const res = await col('WRONGS').select().eq('id', id).limit(1).get()
-      const d = (res.data[0] ?? {}) as { subject: string; source: string; createdAt: string }
-      raw.value = { id, subject: d.subject, tags: [], source: d.source, ts: new Date(d.createdAt).getTime() }
+      // A4：先确保本地错题已迁云端（幂等），再读 problems.content 作为题设
+      await migrateLocalWrongs()
+    } catch (e: any) {
+      console.debug('[Explain] 迁移未通（不影响读取兜底）：', (e && e.message) || e)
+    }
+    try {
+      const res = await col('PROBLEMS').select().eq('id', id).limit(1).get()
+      const d = (res.data[0] ?? {}) as { subject?: string; content?: string; title?: string; createdAt?: string }
+      raw.value = {
+        id,
+        subject: d.title || d.subject || '题',
+        tags: [],
+        source: d.content || '',
+        ts: d.createdAt ? new Date(d.createdAt).getTime() : Date.now()
+      }
+      if (!raw.value.source) noContent.value = true
     } catch (e: any) {
       // 读取失败：保持 raw 为 mock 默认值，页面可用
       console.warn('[Explain] 云端读取失败，使用本地兜底', e)
@@ -76,14 +90,19 @@ const handleExplain = async () => {
       <span class="src">{{ raw.source }}</span>
     </div>
 
-    <!-- 讲题触发：加载态按钮禁用 + 骨架 -->
-    <button class="explain-btn" :disabled="loading" @click="handleExplain">
-      {{ loading ? '小狐在想…' : '讲给我听' }}
-    </button>
+    <!-- 空状态：题设为空时不白屏，引导先去错题本加一题 -->
+    <div v-if="noContent" class="empty-tip">先去错题本加一题</div>
 
-    <!-- 主体：讲解段落（whitespace-pre-line 保留换行；加载时显示骨架） -->
-    <article v-if="loading" class="explain-body skeleton">小狐在想…</article>
-    <article v-else class="explain-body">{{ explanation || '点上面的按钮，小狐陪你一起想～' }}</article>
+    <template v-else>
+      <!-- 讲题触发：加载态按钮禁用 + 骨架 -->
+      <button class="explain-btn" :disabled="loading" @click="handleExplain">
+        {{ loading ? '小狐在想…' : '讲给我听' }}
+      </button>
+
+      <!-- 主体：讲解段落（whitespace-pre-line 保留换行；加载时显示骨架） -->
+      <article v-if="loading" class="explain-body skeleton">小狐在想…</article>
+      <article v-else class="explain-body">{{ explanation || '点上面的按钮，小狐陪你一起想～' }}</article>
+    </template>
 
     <!-- 底部羽毛标记：🪶 统一返回（tabindex+click+enter，图标不改） -->
     <div class="foot-mark" tabindex="0" role="button" aria-label="返回" @click="router.back()" @keydown.enter="router.back()">🪶</div>
@@ -126,6 +145,13 @@ const handleExplain = async () => {
 .src {
   font-size: var(--font-sm);
   color: var(--color-ink-soft);
+}
+.empty-tip {
+  font-size: var(--font-sm);
+  color: var(--color-ink-soft);
+  padding: var(--space-3);
+  background: var(--color-card-bg);
+  border-radius: var(--radius-lg);
 }
 .explain-body {
   background: var(--color-card-bg);
