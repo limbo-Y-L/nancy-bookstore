@@ -351,6 +351,8 @@ DEC-24：会话骨架草稿，未独立落盘，语义并入全局骨架备忘�
 - 现象：Network 直连 `api.deepseek.com/` 报 404。
 - 根因：`.env` 绝对路径覆盖 + 代理未重启。
 - 纪律：改代理配置/.env 必须 `Ctrl+C` 后 `pnpm dev` 重启；浏览器需强刷；验收看 `localhost:5173/llm/...` 200。
+- 排错：prod有Key但API未连上=无直连请求，查题设上下文/触发状态；dev报localhost/llm连接拒绝=无Key回落代理→填Key或仅dev代理。
 
-> 状态更新（2026-10-22）：404 闭环已归档，**预占正文补完**；ADR-14 仍待真机自测（点「讲给我听」验 Network 200）后定稿。
+> 状态：已定稿 · 2026-10-22 · 真机验收通过（小狐开口+Network 200）· commit 5bad1fe 上线。
+> · 终态归档（条件验收）@2026-10-22：拓扑收口A完成；生产讲题依赖设置抽屉 Key（localStorage）+题设上下文，实测 API 未连上（请求未发）；代理仅 dev。
 > WB 回源复核（四组均实测相符）：llm.ts L40 `VITE_LLM_BASE_URL` 优先 → L42 DEV `'/llm/chat/completions'`（无 /v1）→ L43 PROD `'https://api.deepseek.com/v1/chat/completions'`；vite.config.ts L50 target `'https://api.deepseek.com/v1'` + L53 rewrite 去 `/llm`；.env 现有键仅 VITE_LLM_PROVIDER / VITE_LLM_API_KEY / VITE_LLM_MODEL，**不含 VITE_LLM_BASE_URL**（严禁项已落实；密钥留在被 gitignore 的 .env，未入库）。

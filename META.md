@@ -115,6 +115,25 @@ setAttribution云端分支无try/catch，留待方向3。
 
 [2026-10-22补丁·ENV-EXPIRY-FINAL] 新环境个人版到期日 **2026-11-22**，距今约一个月；到期前需用户手控续费或迁移（D1 元宝不代操作）。
 
+〔已被终态版取代 · 见下条 DIR1-CLOSED 终态归档〕[2026-10-22补丁·DIR1-CLOSED] 方向1 讲题LLM切DeepSeek 全量闭环（关联ADR-14）：
+- 代码改动：llm.ts / vite.config.ts / ExplainView.vue / WrongsView.vue / router / SettingsDrawer.vue（同 LLM-DEEPSEEK 补丁，本次已实装）。
+- 代理404排错：根因=.env中VITE_LLM_BASE_URL直连根路径覆盖代理 + 代理未重启；删该变量、重启pnpm dev即通。ADR-14定稿归档（见 LLM-PROXY-404 补丁）。
+- 真机自测：小狐开口讲题，Network /llm/chat/completions 200，验收通过。
+- 入库部署：commit 5bad1fe（13 files, +235/-30）→ pnpm build 退出0 → tcb hosting deploy dist 成功（24文件上传，线上域名可访问）→ git push origin main 同步，本地领先0。
+- 红线守死：.env/.env.local 未入库；.workbuddy/memory 留本地；未代用户重启/填key/发布。
+- 状态：方向1 从"预占/待自测"转为"已定稿·已上线"。
+〔WB 回源复核：commit 5bad1fe 实测 13 files / +235 / -30 ✅、HEAD=5bad1fe 且 [origin/main] 无 ahead（本地领先0）✅、无任何 .env* 入库（.gitignore L10-12 覆盖）✅。**落点校正**：19:36:03 的 hosting 部署落在**旧环境 d3fnn33i4766c7dc**（远端已有 index-BzOmWAdH.js 129.28KB + cloudbase-CeMQE7wU.js 743.79KB，旧域名 index.html 已改引 index-BzOmWAdH.js ✅ 拆包生效）；**新环境 prod-d4ab5d04b10 托管仍是 12:22 旧产物**（index-CVOhJrFG.js 875.5KB）→ 当前形态为「壳在旧环境·数据在新环境」，与 DEPLOY-TOPO / DEPLOY-TOPO-FINAL 补丁「旧环境归档·壳与数据统一打新环境」的表述相反，归档口径需后续统一（另记）。〕
+
+[2026-10-22补丁·DIR1-CLOSED] 方向1终态归档（条件验收）：
+- 拓扑收口A：新环境 prod-d4ab5d04b10 部署成功（curl全200，壳数据同环境），旧环境归档零触碰。
+- 讲题交互：页面UI正常（显示"这一步你当时怎么想的"）；LocalStorage 已存 DeepSeek Key（sk-3ad...），但实测 API 未连上（无 api.deepseek.com 直连，无 localhost/llm 代理，请求未发出），疑题设上下文缺失/直连逻辑未触发；生产讲题依赖 Key+有效题设，未触发走兜底/待机（方向1预期边界）。
+- 代理边界：生产直连 api.deepseek.com，/llm代理仅dev；无Key时dev回落代理致ERR_CONNECTION_REFUSED（已排错）。
+- 待办：后续补真验（带题设+Key直连）→ 通过则转"已验收"（后续补丁）。
+方向1（代码+文档+部署+拓扑）四位一体归零，待方向2接云端RDB。
+〔WB 回源复核：**拓扑收口A 属实** —— 新环境 prod-d4ab5d04b10 托管已有 19:44:22 新产物（index-BzOmWAdH.js 129.28KB + cloudbase-CeMQE7wU.js 743.79KB + index-B_fmRRmj.css + sw.js 同批）✅；旧环境 d3fnn33i4766c7dc 最后写入仍为 **19:36:03**，19:44 之后零写入 → 归档后确实零触碰 ✅。
+**两点口径留痕**：① 新环境仍留有 12:22 的旧产物 index-CVOhJrFG.js（875.48KB）未 prune（无引用即无人加载，无害但占存储）；② 「这一步你当时怎么想的」实为 **src/composables/teachPhrases.ts:7** 的讲题苏格拉底流话术（ExplainView 模板自身文案为「讲给我听」/「小狐在想…」/「小狐暂时走神了，稍后再试」），归档时按"页面UI正常"记录即可。
+**锚点校正**：补丁区并无 DIR1-TOPO-A / DIR1-ACCEPT 两条（实际末条为 DIR1-CLOSED @L118），本终态条直接接其后；同名前缀的 L118 条已标「已被终态版取代」以免 grep 撞名。〕
+
 ════════════════════════════════════════════════════════════
 
 §A 项目背景 · 全局愿景层（跨迭代稳定）
@@ -147,7 +166,7 @@ Web+PWA壳Pad竖屏优先/手机并重/电脑兜底；全局聊天窗双态；�
      新环境 nancy-bookstore-prod-d4ab5d04b10 29文件同指纹（12:22）全量承载壳+数据，旧环境 d3fnn33i4766c7dc 归档。
      匿名登录跳过（initCloudBase=Promise.resolve()）；wireState='live'；云端anon读已放通（方向2 ✅，仅 SELECT 策略；写由 RLS 默认拒绝、本地兜底接管）。
      到期提醒：新环境 2026-11-22 到期。
-     方向2/3/4 已闭环上线（见 DIR3+4-CLOSED 补丁），方向5（SDK拆包·主包129KB）✅闭环；剩余方向2.5挂起。
+     方向2/3/4 已闭环上线（见 DIR3+4-CLOSED 补丁），方向5（SDK拆包·主包129KB）✅闭环，方向1 · 讲题LLM切DeepSeek（去mock+代理404闭环+新环境拓扑收口A）✅ 闭环上线 @5bad1fe（条件验收，API未直连，待题设+Key终验）；剩余方向2.5挂起。
   2026-10-21 批次②-3 收束 @d976f40：src/lib/llm.ts(callLLM mock骨架,wireState='mock') + src/lib/sync.ts(probe四集合成对add/remove静默零残留) + ADR-08补注消歧 + db.ts col() key-only签名护栏标为有意设计
   2026-10-22 托管拓扑：双环境同指纹壳并存 · 数据统一打 nancy-bookstore-prod-d4ab5d04b10 · 详见 DEPLOY-TOPO 补丁
 
@@ -160,6 +179,7 @@ Web+PWA壳Pad竖屏优先/手机并重/电脑兜底；全局聊天窗双态；�
   方向3 · 归因本地兜底 ✅ 闭环（本补丁）
   方向4 · 存储版本号 ✅ 闭环（本补丁）
   方向5 · SDK拆包（manualChunks 单点，主包129KB）✅ 闭环
+  方向1 · 讲题LLM切DeepSeek ✅ 闭环（commit 5bad1fe，ADR-14定稿）
   方向2.5 · 绑自定义域名 ⏸ 挂起（需备案域名）
 
 ════════════════════════════════════════════════════════════
