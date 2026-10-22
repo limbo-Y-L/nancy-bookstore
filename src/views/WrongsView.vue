@@ -37,7 +37,47 @@ const formText = ref('')
 // 单开关：全三页共用；mock 分支完全保留，real 走 col('WRONGS').add（schema 见 spec/02_schema.md）
 const useMock = wireState === 'mock'
 
-// 批次③-1：live 态从 CloudBase 拉真实错题；mock 态保留本地数组（不接 col() 读，仅写走 col()）
+// 批次③-1：live 态优先本地镜像（带 family_id）即时显示 + 强刷不丢；云端拉取成功后合并
+// 本地镜像 key（与云端同一 family_id 隔离维度）
+const LIVE_LOCAL_KEY = 'nancy-bookhouse.wrongs.live'
+
+// 读原始全量数组（跨 family 全部条目，写入前需保留其他 family 数据）
+const readRawLocal = (): Array<Record<string, any>> => {
+  try {
+    const raw = localStorage.getItem(LIVE_LOCAL_KEY)
+    if (!raw) return []
+    const arr = JSON.parse(raw)
+    return Array.isArray(arr) ? arr : []
+  } catch {
+    // JSON 解析异常 / 隐私模式：静默返回空
+    return []
+  }
+}
+// 按 id 去重（保留先出现的「最新」项，避免重复 id 阻断渲染）
+const dedupeById = (arr: Array<Record<string, any>>): Array<Record<string, any>> => {
+  const seen = new Set<string>()
+  const out: Array<Record<string, any>> = []
+  for (const w of arr) {
+    if (!w || !w.id) continue
+    if (seen.has(w.id)) continue
+    seen.add(w.id)
+    out.push(w)
+  }
+  return out
+}
+// 按当前 familyId 过滤（读取/展示用），并按 id 去重
+const loadLocalWrongs = (familyId: string): Array<Record<string, any>> =>
+  dedupeById(readRawLocal().filter((w: any) => w.familyId === familyId))
+
+// 写回全量数组（确保传入为有效数组，跨 family 数据不丢）
+const persistLocalWrongs = (items: Array<Record<string, any>>): void => {
+  try {
+    localStorage.setItem(LIVE_LOCAL_KEY, JSON.stringify(Array.isArray(items) ? items : []))
+  } catch {
+    // 隐私模式等场景不可用：静默跳过
+  }
+}
+
 const liveWrongs = ref<Array<Record<string, any>>>([])
 const liveLoading = ref(false)
 const liveError = ref('')
@@ -48,14 +88,93 @@ const attrLabel = (key: string): string => {
   return o ? o.label : key
 }
 
-// 列表统一出口：mock 走本地数组，live 走云端拉取（模板只认 displayList）
+// 渲染前过滤：剔除异常/非标准对象（无 id 或无 source/question/subject），避免 Error 对象误入数组导致渲染红字
+const isValidWrong = (w: any): boolean =>
+  !!w && typeof w === 'object' && !!w.id && !!(w.source || w.question || w.subject)
+
+// 列表统一出口：mock 走本地数组，live 走云端拉取；渲染前过滤非标准对象（模板只认 displayList）
 const displayList = computed<Array<Record<string, any>>>(() =>
-  useMock ? (mockWrongs.value as unknown as Array<Record<string, any>>) : liveWrongs.value
+  (useMock ? (mockWrongs.value as unknown as Array<Record<string, any>>) : liveWrongs.value).filter(isValidWrong)
 )
 
+// 方向3 · 归因本地镜像（独立键，与 wrongs 兜底六点互不干扰）
+// 结构：ATTR_KEY 存分区数组 [{ familyId, list: [{ wrongId, wrongType, updatedAt }] }]
+const ATTR_KEY = 'nancy-bookhouse.attributions.live'
+
+// 方向4 · 存储版本号（独立版本键，不触碰 ATTR_KEY / LIVE_LOCAL_KEY 数据；本次基线仅占位，不删旧数据）
+const VERSION_KEY = 'nancy-bookhouse.storage.version'
+const CURRENT_VERSION = 'v1.0.0' // 归因本地镜像 + wrongs 兜底六点基线
+
+// 读全部分区（跨 family），解析失败静默返回空数组
+const readAttrRaw = (): Array<{ familyId: string; list: Array<{ wrongId: string; wrongType: string; updatedAt: number }> }> => {
+  try {
+    const raw = localStorage.getItem(ATTR_KEY)
+    if (!raw) return []
+    const arr = JSON.parse(raw)
+    return Array.isArray(arr) ? arr : []
+  } catch {
+    return []
+  }
+}
+// 取当前 family 分区的 list
+const loadAttrList = (familyId: string): Array<{ wrongId: string; wrongType: string; updatedAt: number }> => {
+  const part = readAttrRaw().find(p => p.familyId === familyId)
+  return part ? part.list : []
+}
+// 写回：把归因合并进当前 family 分区（按 wrongId 去重，新覆盖旧），写全部（跨 family 不覆盖）
+const persistAttr = (familyId: string, wrongId: string, wrongType: string): void => {
+  try {
+    const partitions = readAttrRaw()
+    const idx = partitions.findIndex(p => p.familyId === familyId)
+    const entry = { wrongId, wrongType, updatedAt: Date.now() }
+    if (idx >= 0) {
+      const list = partitions[idx].list.filter(x => x.wrongId !== wrongId)
+      list.unshift(entry)
+      partitions[idx].list = list
+    } else {
+      partitions.unshift({ familyId, list: [entry] })
+    }
+    localStorage.setItem(ATTR_KEY, JSON.stringify(partitions))
+  } catch (e: any) {
+    console.warn('[Wrongs] 归因本地写入失败：', (e && e.message) || e)
+  }
+}
+// 方向4 · 存储版本校验（独立版本键，不删 ATTR_KEY / LIVE_LOCAL_KEY 数据；本次基线不删旧数据，仅写回版本号）
+const checkStorageVersion = (): void => {
+  try {
+    const prev = (() => {
+      try { return localStorage.getItem(VERSION_KEY) } catch { return null }
+    })()
+    if (prev !== CURRENT_VERSION) {
+      console.warn('[Wrongs] 存储版本迁移：', prev || '无', '→', CURRENT_VERSION)
+      localStorage.setItem(VERSION_KEY, CURRENT_VERSION)
+    }
+  } catch (e: any) {
+    console.warn('[Wrongs] 版本校验失败：', (e && e.message) || e)
+  }
+}
+// 渲染前补值：云端无归因字段时，用本地镜像 wrongType 补（只改视图层，不触发写云端）
+const applyAttrMirror = (familyId: string): void => {
+  try {
+    const mirror = new Map(loadAttrList(familyId).map(a => [a.wrongId, a.wrongType]))
+    if (mirror.size === 0) return
+    liveWrongs.value = liveWrongs.value.map((w: any) => {
+      if (!w.wrongType && mirror.has(w.id)) {
+        return { ...w, wrongType: mirror.get(w.id) }
+      }
+      return w
+    })
+  } catch (e: any) {
+    console.warn('[Wrongs] 归因镜像补值失败：', (e && e.message) || e)
+  }
+}
+
 const loadLiveWrongs = async () => {
+  const familyId = getFamilyCode()
   liveLoading.value = true
   liveError.value = ''
+  // 1) 先以本地镜像即时渲染：强刷不丢；云端不可达时仍有数据
+  liveWrongs.value = loadLocalWrongs(familyId)
   try {
     const res = await col('WRONGS').select().order('createdAt', 'desc').limit(50).get()
     const list = (res.data || []) as Array<Record<string, any>>
@@ -69,18 +188,23 @@ const loadLiveWrongs = async () => {
       ;(tmp.fileList || []).forEach((f: any) => { if (f.fileID && f.tempFileURL) urlMap.set(f.fileID, f.tempFileURL) })
       list.forEach(w => { if (w.imageFileId) w.imageUrl = urlMap.get(w.imageFileId) || '' })
     }
-    liveWrongs.value = list
+    // 2) 合并：云端记录 + 本地兜底中“云端没有”的项；按 createdAt 去重避免与云端同条重复（本地副本永不清空）
+    const cloudCreated = new Set((list as Array<Record<string, any>>).map(w => w.createdAt))
+    const localOnly = loadLocalWrongs(familyId).filter(w => !cloudCreated.has(w.createdAt))
+    liveWrongs.value = localOnly.length ? [...localOnly, ...list] : list
   } catch (e: any) {
-    // 鉴权未通（如 LOGIN_MANNER_UNREGISTED / 400）：降级为空态，不显示红字
-    console.warn('[Wrongs] 云端读取失败，使用本地兜底', e)
-    liveWrongs.value = []
+    // 鉴权未通 / 网络异常：维持本地镜像兜底，不显示红字（仅打印 message，避免整对象刷屏）
+    console.warn('[Wrongs] 云端读取失败，使用本地兜底：', (e && e.message) || e)
   } finally {
     liveLoading.value = false
   }
+  // ③ 本地归因镜像补值（云端无归因时用本地补，只改视图层，不触发写云端）
+  applyAttrMirror(familyId)
 }
 
-// wireState 为 'live' 时挂载即拉取（ADR-07：无登录态依赖，直接读库）
+// 应用初始化入口：版本校验（方向4）→ 加载错题兜底 + 补归因镜像（方向3，applyAttrMirror 在 loadLiveWrongs 末尾）
 onMounted(() => {
+  checkStorageVersion()
   if (useMock) return
   loadLiveWrongs()
 })
@@ -88,6 +212,7 @@ onMounted(() => {
 const submitWrong = async () => {
   const text = formText.value.trim()
   if (!text) return
+  const familyId = getFamilyCode()
   if (useMock) {
     mockWrongs.value.push({
       id: 'm' + Date.now(),
@@ -97,8 +222,11 @@ const submitWrong = async () => {
       ts: Date.now()
     })
   } else {
-    await col('WRONGS').insert({
-      familyId: getFamilyCode(),
+    // 本地兜底项（带 family_id，取当前 localStorage 的 nancy-bookhouse.familyCode）
+    // id 用 crypto.randomUUID() 防主键碰撞（现代浏览器原生支持，无额外依赖）
+    const localItem: Record<string, any> = {
+      id: crypto.randomUUID(),
+      familyId,
       source: text,
       answer: '',
       subject: formType.value,
@@ -108,9 +236,36 @@ const submitWrong = async () => {
       imageThumbUrl: '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    })
+    }
+    // ① 本地先落盘（独立 try/catch，云端异常绝不中断本地写入）
+    try {
+      const all = readRawLocal()
+      all.unshift(localItem)
+      persistLocalWrongs(all)
+    } catch (e: any) {
+      console.warn('[Wrongs] 本地写入失败：', (e && e.message) || e)
+    }
+    // 即时显示（去重 + 过滤非标准对象，避免任何异常对象混入渲染）
+    liveWrongs.value = dedupeById([localItem, ...liveWrongs.value.filter(isValidWrong)])
+    formText.value = ''
+    // ② 云端写入：成败不阻断（失败仅 warn，本地已兜底，不抛红、不删本地副本）
+    try {
+      await col('WRONGS').insert({
+        familyId,
+        source: text,
+        answer: '',
+        subject: formType.value,
+        tags: [],
+        reviewed: false,
+        imageUrl: '',
+        imageThumbUrl: '',
+        createdAt: localItem.createdAt,
+        updatedAt: localItem.updatedAt
+      })
+    } catch (e: any) {
+      console.warn('[Wrongs] 云端写入失败，已降级本地存储：', (e && e.message) || e)
+    }
   }
-  formText.value = ''
 }
 
 const router = useRouter()
@@ -120,15 +275,24 @@ const goExplain = (id: string) => router.push({ path: '/explain', query: { id } 
 // 归因浮层：当前正在归因的题 id（null = 关闭）
 const attrOpenId = ref<string | null>(null)
 
-/** 归因快捷切换：mock 态只切本地数组；live 态走 col().doc().update 并同步本地镜像 */
+/** 归因快捷切换：mock 态只切本地数组；live 态云端最佳努力 + 本地镜像必落盘（RLS 拦截也不丢） */
 const setAttribution = async (id: string, key: string) => {
   if (useMock) {
     const item = mockWrongs.value.find(w => w.id === id)
     if (item) item.wrongType = key
   } else {
-    await col('WRONGS').eq('id', id).update({ wrongType: key })
+    const familyId = getFamilyCode()
+    // ① 云端 update 最佳努力：RLS 拦截仅 warn，不抛红、不阻断本地
+    try {
+      await col('WRONGS').eq('id', id).update({ wrongType: key })
+    } catch (e: any) {
+      console.warn('[Wrongs] 云端归因写入失败，已降级本地镜像：', (e && e.message) || e)
+    }
+    // ② 内存即时显示
     const item = liveWrongs.value.find(w => w.id === id)
     if (item) item.wrongType = key
+    // ③ 本地镜像持久化（按 familyId 分区，跨 family 不覆盖）
+    persistAttr(familyId, id, key)
   }
   attrOpenId.value = null
 }
