@@ -27,6 +27,7 @@ const useMock = wireState === 'mock'
 
 const raw = ref<MockWrong>(mockWrongs[0])
 const explanation = ref('')
+const loading = ref(false)
 
 onMounted(async () => {
   if (!useMock) {
@@ -41,9 +42,20 @@ onMounted(async () => {
   } else {
     raw.value = mockWrongs.find(w => w.id === id) ?? mockWrongs[0]
   }
-  // wireState 仍 mock：callLLM 返回占位串，不真发请求
-  explanation.value = await callLLM(`讲一讲这道${raw.value.subject}题`)
 })
+
+// P1 · 讲题去 mock：点击「讲给我听」真连大模型；加载态/失败降级均不抛红、不白屏
+const handleExplain = async () => {
+  loading.value = true
+  try {
+    explanation.value = await callLLM(raw.value.source)
+  } catch (e: any) {
+    console.warn('[Explain] 讲题请求失败：', (e && e.message) || e)
+    explanation.value = '小狐暂时走神了，稍后再试'
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
@@ -64,8 +76,14 @@ onMounted(async () => {
       <span class="src">{{ raw.source }}</span>
     </div>
 
-    <!-- 主体：讲解段落（whitespace-pre-line 保留换行） -->
-    <article class="explain-body">{{ explanation }}</article>
+    <!-- 讲题触发：加载态按钮禁用 + 骨架 -->
+    <button class="explain-btn" :disabled="loading" @click="handleExplain">
+      {{ loading ? '小狐在想…' : '讲给我听' }}
+    </button>
+
+    <!-- 主体：讲解段落（whitespace-pre-line 保留换行；加载时显示骨架） -->
+    <article v-if="loading" class="explain-body skeleton">小狐在想…</article>
+    <article v-else class="explain-body">{{ explanation || '点上面的按钮，小狐陪你一起想～' }}</article>
 
     <!-- 底部羽毛标记：🪶 统一返回（tabindex+click+enter，图标不改） -->
     <div class="foot-mark" tabindex="0" role="button" aria-label="返回" @click="router.back()" @keydown.enter="router.back()">🪶</div>
@@ -117,6 +135,24 @@ onMounted(async () => {
   color: var(--color-ink);
   font-size: var(--font-base);
   white-space: pre-line;
+}
+.explain-btn {
+  align-self: flex-start;
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) var(--space-3);
+  background: #b9a7e6;
+  color: #fff;
+  font-size: var(--font-base);
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+.explain-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.skeleton {
+  opacity: 0.55;
 }
 .foot-mark {
   align-self: flex-start;

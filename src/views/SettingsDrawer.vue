@@ -144,7 +144,7 @@ const doExport = async () => {
     <section class="blk">
       <h3 class="blk-title">API Key</h3>
       <p class="blk-sub">只存在这台设备的浏览器里，不上传、不进代码、不写进错题本。</p>
-      <div class="row">
+      <form class="row" @submit.prevent>
         <input
           v-model="apiKey"
           class="inp"
@@ -153,7 +153,7 @@ const doExport = async () => {
           aria-label="模型 API Key"
         />
         <button class="btn" type="button" @click="saveKey">保存</button>
-      </div>
+      </form>
       <p v-if="keyMsg" class="hint">{{ keyMsg }}</p>
     </section>
 

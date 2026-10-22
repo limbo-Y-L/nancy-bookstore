@@ -63,3 +63,4 @@
 - 归因镜像（ADR-12）：键 nancy-bookhouse.attributions.live，按 familyId 分区，wrongId 去重，云端失败降级。
 - 版本占位（ADR-12）：键 nancy-bookhouse.storage.version = v1.0.0，onMounted 校验，首次写入。
 - SDK拆包（ADR-13）：vite.config.ts manualChunks 拆 cloudbase-CeMQE7wU.js(743KB)，主包 index-DtJPM8HJ.js(129KB)，SW 不预缓存。
+- LLM出口（ADR-14预占）：llm.ts 默认出口 deepseek，代理 /llm 仅 dev（生产需自备后端代理）。

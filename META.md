@@ -84,6 +84,33 @@ setAttribution云端分支无try/catch，留待方向3。
 - 红线：未动 .vue / db.ts col()护栏 / cloudbase.ts 跳过逻辑 / RLS / 兜底六点 / 三键。未 commit / 未 deploy。
 - 构建：pnpm build 退出码0，106 modules transformed，PWA generateSW 正常，precache 19 entries (198.83KiB) 不含大 chunk。〔WB 回源复核：主包 129.3KB / cloudbase chunk 743.8KB / 预缓存 19 条且不含 cloudbase chunk，三项均实测相符；workbox 排除行实际在 vite.config.ts L103（新增 manualChunks 块后行号后移）〕
 
+[2026-10-22补丁·LLM-DEEPSEEK] 讲题LLM切DeepSeek + 控制台清理（方向1收尾，关联ADR-14预占）：
+- 背景：真实LLM入口为 ExplainView.vue「讲给我听」；TeachView「要讲/说完了」为零网络苏格拉底流不调LLM。原 llm.ts 默认 Hunyuan 且未读设置抽屉 localStorage，致空key→401→本地兜底。
+- 代码侧改动（CB已执行，build/lint通过，未提交）：
+· src/lib/llm.ts：默认provider=deepseek；key优先localStorage['nancy-bookhouse.apiKey']回退VITE_LLM_API_KEY；dev走/llm代理。
+· vite.config.ts：server.proxy加 /llm→https://api.deepseek.com（仅dev，需重启）。
+· src/views/WrongsView.vue：云端读写best-effort降级console.debug（保留本地兜底，待方向2）。
+· src/router/index.ts：补 /home→HomeShell，消路由警告。
+· src/views/SettingsDrawer.vue：API Key输入框外包<form @submit.prevent/>。
+- 边界：/llm代理仅dev生效，生产CORS需自备后端（方向2收尾）；db.ts rdb链式API不符CloudBase实际属方向2，本次不动。
+- 状态：未commit、未push、未deploy；自测待用户点「讲给我听」验 Network 200。
+- 红线：未动 .vue 业务守门、未动 db.ts、未自动构建发布。
+〔WB 回源复核：llm.ts 默认 provider='deepseek'、key 读取顺序 localStorage→VITE_LLM_API_KEY、DEV 分支走 '/llm/v1/chat/completions'；vite.config.ts L46-53 proxy /llm→api.deepseek.com + rewrite；router L20 补 /home→HomeShell；SettingsDrawer L147 <form @submit.prevent>；WrongsView L197/L290 云端失败降级 console.debug；ExplainView L51 调 callLLM、L54 失败降级「小狐暂时走神了，稍后再试」、L81 按钮「讲给我听」——七项均实测相符。
+另注（你这批文本未提但代码已落地，属辅导口径 G1，建议归档留痕）：llm.ts 内另含 **孩子版 Prompt 模板**（只讲思路/知识点/常见陷阱·绝不告诉答案·讲完抛一个引导问题）+ **剧透审查层**（命中「答案+是」且带选项字母或数字时降级为引导文案）+ **15s 超时**（AbortController）。这三条是本次「去 mock」的实际内容，不止换 provider。〕
+
+[2026-10-22补丁·LLM-PROXY-404] ADR-14 正文归档：DeepSeek 本地代理 404 闭环与排错纪律（预占转正，内容原样如下）
+### 结论
+本地开发采用 Vite 代理，避免直连官方 API 根路径导致 404。
+### 配置规范
+- llm.ts: DEV 分支返回 `/llm/chat/completions`（相对路径，无 /v1）；PROD 保留 `https://api.deepseek.com/v1/chat/completions`。
+- vite.config.ts: `/llm` 代理 target 为 `https://api.deepseek.com/v1`，rewrite 移除 `/llm` 前缀，确保最终命中单 `/v1`。
+- .env: **严禁设置** `VITE_LLM_BASE_URL=https://api.deepseek.com`（会覆盖代理直连缺 /v1 致 404），本地应删除该变量走默认代理。
+### 排错经验
+- 现象：Network 直连 `api.deepseek.com/` 报 404。
+- 根因：`.env` 绝对路径覆盖 + 代理未重启。
+- 纪律：改代理配置/.env 必须 `Ctrl+C` 后 `pnpm dev` 重启；浏览器需强刷；验收看 `localhost:5173/llm/...` 200。
+〔WB 回源复核（四组均实测相符）：llm.ts L40 `getEnv('VITE_LLM_BASE_URL') ||` 优先 → L42 DEV `'/llm/chat/completions'`（无 /v1）→ L43 PROD `'https://api.deepseek.com/v1/chat/completions'`；vite.config.ts L50 target `'https://api.deepseek.com/v1'` + L53 rewrite `p.replace(/^\/llm/, '')` → 最终命中单 `/v1`；.env 现有键仅 VITE_LLM_PROVIDER / VITE_LLM_API_KEY / VITE_LLM_MODEL，**不含 VITE_LLM_BASE_URL**（严禁项已落实，密钥留在被 gitignore 的 .env 内未入库）。ADR-14 正文同步落 notes/00_decisions.md。〕
+
 [2026-10-22补丁·DEPLOY-TOPO-FINAL] 新环境 nancy-bookstore-prod-d4ab5d04b10 全量承载：终端 tcb hosting deploy dist 成功上传 **29 文件**（含 index.html、WrongsView 等），产物指纹 index-CVOhJrFG.js / index-B_fmRRmj.css（12:22 同指纹部署）。旧环境 d3fnn33i4766c7dc 进入归档态，不再接受新部署；壳与数据统一打新环境。双环境同指纹壳并存。
 
 [2026-10-22补丁·ENV-EXPIRY-FINAL] 新环境个人版到期日 **2026-11-22**，距今约一个月；到期前需用户手控续费或迁移（D1 元宝不代操作）。
@@ -161,6 +188,7 @@ ADR-05 append-only不覆写 · WHY审计可追溯 · HOW sealed段不动
 ADR-06 讲题内容隔离独立页 · WHY DEC-16二审时间解耦 · HOW replace('/home')无堆叠
 ADR-07 架构迁转国内优先 · WHAT弃CF迁CloudBase · WHY pages.dev实证超时/国内节点顺/免域名免备案 · HOW 静态壳复用+ocr云函数+前端直连LLM+family_code分区（ADR-03 限定为CF期封存史实，不约束演进方向）
 ADR-08【数据契约·集合命名域锁定·2026-10-21】WHAT四集合逻辑schema锁定(families/wrongs/profiles/plans)+db.ts col() key-only签名护栏 · WHY 编译期拦拼错集合名+历史别名captures/records永久作废 · HOW spec/02_schema.md成文；括号注：本约束限CloudBase集合名域，本地IndexedDB captures/teach-events属sealed域不受此限
+ADR-14【讲题LLM切DeepSeek·去mock·代理404闭环·2026-10-22】WHAT callLLM由Hunyuan mock占位改DeepSeek真连+key对接设置抽屉localStorage · WHY 用户已有DeepSeek密钥免申请混元+前端直连需dev代理规避CORS · HOW llm.ts改默认provider与key读取顺序(DEV /llm/chat/completions无/v1·PROD保留/v1)+vite.config.ts加/llm代理(target带/v1·rewrite去前缀)+失败降级「小狐暂时走神了」；404根因=.env绝对路径覆盖+代理未重启·纪律=改配置必须Ctrl+C重启dev+浏览器强刷+验localhost:5173/llm/... 200（详见notes/00_decisions ADR-14 与本文件 LLM-PROXY-404 补丁）
 
 ════════════════════════════════════════════════════════════
 

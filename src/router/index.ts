@@ -17,6 +17,7 @@ export const router = createRouter({
     // REV-03 占位路由：讲题流落点（讲题内容属 TCH-01，本片只建壳）
     { path: '/teach', name: 'teach', component: TeachView },
     { path: '/', component: HomeShell }, // 首页
+    { path: '/home', component: HomeShell }, // 作业桌（TeachView 退出落点 / 缺参兜底），与 / 同壳
     { path: '/atelier', component: AtelierView }, // 妙语工坊
     { path: '/arena', component: ArenaView }, // 星练场
     // ②-4a 错题/讲题/学情三视图（mock 态，真实读写留②-4末换线；path 深度 ≤2）

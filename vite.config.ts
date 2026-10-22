@@ -43,6 +43,17 @@ export default defineConfig({
       '@': resolve(projectRoot, 'src')
     }
   },
+  // 讲题 LLM 跨域代理：前端 /llm → https://api.deepseek.com/v1（dev 期规避浏览器 CORS；生产需自备后端代理如 CF Function /api/llm）
+  server: {
+    proxy: {
+      '/llm': {
+        target: 'https://api.deepseek.com/v1',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (p: string) => p.replace(/^\/llm/, '')
+      }
+    }
+  },
   // 方向5 · SDK 拆包：@cloudbase/js-sdk 独立 chunk，主包回退到 ~130KB。
   // 说明：SDK 仅被 src/lib/cloudbase.ts 顶层静态引入；cbApp 需保持同步导出
   // （视图层/WrongsView、useOcr 均同步使用），故用 manualChunks 拆包，

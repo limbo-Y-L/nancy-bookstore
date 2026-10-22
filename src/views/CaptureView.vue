@@ -106,10 +106,20 @@ async function submit(): Promise<void> {
   // 1. 小狐脉冲占住等待态（Q1）
   pulseFox('ocr-pending')
   // 2. 整批原图落 IndexedDB（红线：仅本地）
+  // 落盘前剥离 Vue 响应式 Proxy：IndexedDB 结构化克隆无法克隆 Proxy，
+  // 且不能走 JSON.parse(JSON.stringify())（会丢弃 ArrayBuffer 导致原图丢失）。
+  // 读取 proxy 属性会返回底层原始值，故逐个字段重建为纯对象、buffer 保留原始 ArrayBuffer（可克隆）。
+  const images = picked.value.map(img => ({
+    id: img.id,
+    name: img.name,
+    type: img.type,
+    size: img.size,
+    buffer: img.buffer
+  }))
   const payload: CapturePayload = {
     sessionId,
     mode: mode.value,
-    images: picked.value,
+    images,
     createdAt: new Date().toISOString()
   }
   await saveCapture(payload)

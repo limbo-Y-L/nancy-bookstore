@@ -322,3 +322,35 @@ DEC-24：会话骨架草稿，未独立落盘，语义并入全局骨架备忘�
 > 落地实测（WB 回源核 · 2026-10-22）：`index-DtJPM8HJ.js` = **129.3KB**（主包，≤150KB 目标达成）· `cloudbase-CeMQE7wU.js` = **743.8KB** 独立 chunk · workbox `globIgnores` 含 `'**/cloudbase-*.js'`（**vite.config.ts L103**）· 本地 dist 预缓存 **19 条且不含 cloudbase 大 chunk**（实测）· 改动面仅 `vite.config.ts` 单点（`git diff` 确认 cloudbase.ts 的未提交改动属更早批次、与本条无关）。
 > 偏差留痕：原定步骤①（改 db.ts 动态 import）、②（改 cloudbase.ts 动态 import）**被废弃**——`cbApp` 为同步导出对象（WrongsView:186 / useOcr:50 / db.ts:46 同步消费），改动态将破坏 .vue 视图层、越红线；manualChunks 属 build-only 选项（serve 模式忽略），零回归。
 > 编号：ADR07~ADR12 已占用，本条顺延为 **ADR-13**，不重号。
+
+---
+
+## ADR-14【讲题LLM切DeepSeek·去mock】（预占·2026-10-22）
+
+- 状态：代码闭环待真机验收
+- WHAT：callLLM 由 Hunyuan mock 占位改为 DeepSeek 真连，key 对接设置抽屉 localStorage。
+- WHY：用户已有 DeepSeek 密钥，免申请混元；前端直连需 dev 代理规避 CORS。
+- HOW：llm.ts 改默认 provider + key 读取顺序；vite.config.ts 加 /llm 代理；失败降级「小狐暂时走神了」。
+- 关联：方向1收尾、依赖方向2生产代理收尾。
+
+> **本条为编号预占**：正文待元宝在真机自测通过后补完（当前仅占编号与标题，勿视为已定稿决策）。
+> WB 回源核（2026-10-22）：七项代码改动均实测相符（默认 provider=deepseek / key 读序 localStorage→VITE_LLM_API_KEY / DEV 走 /llm/v1/chat/completions / vite proxy /llm→api.deepseek.com + rewrite / router 补 /home→HomeShell / SettingsDrawer <form @submit.prevent> / WrongsView 云端失败降级 console.debug / ExplainView「讲给我听」+ 失败降级「小狐暂时走神了，稍后再试」）；另 llm.ts 内含孩子版 Prompt 模板 + 剧透审查层 + 15s 超时（辅导口径，属 G1），补稿时请一并纳入。
+> 编号：ADR07~ADR13 已占用，本条预占 **ADR-14**（全称 DEC-2026-10-22-ADR14，标题沿用「ADR-14【讲题LLM切DeepSeek·去mock】」写法），不重号。
+
+### DeepSeek 本地代理 404 闭环与排错纪律（2026-10-22 追加 · 正文原样）
+
+**结论**
+本地开发采用 Vite 代理，避免直连官方 API 根路径导致 404。
+
+**配置规范**
+- llm.ts: DEV 分支返回 `/llm/chat/completions`（相对路径，无 /v1）；PROD 保留 `https://api.deepseek.com/v1/chat/completions`。
+- vite.config.ts: `/llm` 代理 target 为 `https://api.deepseek.com/v1`，rewrite 移除 `/llm` 前缀，确保最终命中单 `/v1`。
+- .env: **严禁设置** `VITE_LLM_BASE_URL=https://api.deepseek.com`（会覆盖代理直连缺 /v1 致 404），本地应删除该变量走默认代理。
+
+**排错经验**
+- 现象：Network 直连 `api.deepseek.com/` 报 404。
+- 根因：`.env` 绝对路径覆盖 + 代理未重启。
+- 纪律：改代理配置/.env 必须 `Ctrl+C` 后 `pnpm dev` 重启；浏览器需强刷；验收看 `localhost:5173/llm/...` 200。
+
+> 状态更新（2026-10-22）：404 闭环已归档，**预占正文补完**；ADR-14 仍待真机自测（点「讲给我听」验 Network 200）后定稿。
+> WB 回源复核（四组均实测相符）：llm.ts L40 `VITE_LLM_BASE_URL` 优先 → L42 DEV `'/llm/chat/completions'`（无 /v1）→ L43 PROD `'https://api.deepseek.com/v1/chat/completions'`；vite.config.ts L50 target `'https://api.deepseek.com/v1'` + L53 rewrite 去 `/llm`；.env 现有键仅 VITE_LLM_PROVIDER / VITE_LLM_API_KEY / VITE_LLM_MODEL，**不含 VITE_LLM_BASE_URL**（严禁项已落实；密钥留在被 gitignore 的 .env，未入库）。

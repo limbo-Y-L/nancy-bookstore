@@ -193,8 +193,8 @@ const loadLiveWrongs = async () => {
     const localOnly = loadLocalWrongs(familyId).filter(w => !cloudCreated.has(w.createdAt))
     liveWrongs.value = localOnly.length ? [...localOnly, ...list] : list
   } catch (e: any) {
-    // 鉴权未通 / 网络异常：维持本地镜像兜底，不显示红字（仅打印 message，避免整对象刷屏）
-    console.warn('[Wrongs] 云端读取失败，使用本地兜底：', (e && e.message) || e)
+    // 鉴权未通 / 网络异常：维持本地镜像兜底，不显示红字（云端为 best-effort，待方向2接通；降级为 debug 避免红色告警刷屏）
+    console.debug('[Wrongs] 云端读取未通（best-effort，已用本地兜底，待方向2接通）：', (e && e.message) || e)
   } finally {
     liveLoading.value = false
   }
@@ -286,7 +286,8 @@ const setAttribution = async (id: string, key: string) => {
     try {
       await col('WRONGS').eq('id', id).update({ wrongType: key })
     } catch (e: any) {
-      console.warn('[Wrongs] 云端归因写入失败，已降级本地镜像：', (e && e.message) || e)
+      // 云端为 best-effort（rdb 链路待方向2对齐 + RLS anon 待放通），失败仅静默降级到本地镜像
+      console.debug('[Wrongs] 云端归因写入未通（best-effort，已降级本地镜像，待方向2接通）：', (e && e.message) || e)
     }
     // ② 内存即时显示
     const item = liveWrongs.value.find(w => w.id === id)
