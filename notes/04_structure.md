@@ -60,3 +60,5 @@
 - 兜底边界: 归因按钮云端分支无 try/catch（方向3补）
 - 环境映射: 壳与数据最终统一在新环境 nancy-bookstore-prod-d4ab5d04b10；旧环境归档。
 - 本地兜底六点（对照 ADR-11）：①本地键全量读写跨family不覆盖 ②保留本地副本 ③createdAt去重 ④crypto.randomUUID防碰撞 ⑤isValidWrong渲染过滤 ⑥warn仅打e.message。
+- 归因镜像（ADR-12）：键 nancy-bookhouse.attributions.live，按 familyId 分区，wrongId 去重，云端失败降级。
+- 版本占位（ADR-12）：键 nancy-bookhouse.storage.version = v1.0.0，onMounted 校验，首次写入。

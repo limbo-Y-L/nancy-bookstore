@@ -134,6 +134,17 @@
 | HOTFIX | DataCloneError：CaptureView 提交批改落 IDB 剥离 Vue Proxy | ✅闭环 2026-10-21 | deploy index-CJj_lg86.js | 仅 Capture 采集链；WrongsView/家庭码/归因/导出均不受影响 |
 | OCR | 新建 ocr 云函数(降级桩)+前端 callFunction 通道 | ✅闭环 2026-10-21 | deploy index-BZaLl9Ws.js + ocr 函数 | Windows CLI 无法部署 HTTP Web 函数(+x)，暂走 SDK 通道；纯 HTTP /api/ocr 待 Linux/Mac/WSL |
 
+### 批次③-1 进度（2026-10-22 · PG 路线切换）
+
+- 底座：CloudBase 环境 nancy-bookstore-d3fnn33i4766c7dc，PG 模式（非文档型）。
+- wrongs 表：CLI 建表完成，RLS authenticated 放行，anon 回收。
+- 前端：db.ts 锁芯替换为 rdb + await thenable，camel↔snake 转换层就位。
+- 登录：匿名登录开关控制台已开，但运行时偶发 400（环境 ID 对齐待用户最后一次确认）。
+- 降级：登录 400 捕获不抛，视图层 try/catch 空态兜底，红字消除。
+- 闸门：**wireState='live'**（G2 已于 2026-10-21 `bff5a33` 放行，②-7/②-7.1 四集合真读写已激活）—— 口径校正：原稿「wireState='mock' 仍守门，G2 未放」与源码及提交史不符，按源码记为 `live`；**全绿前不 build 不 commit**。
+- 待办：用户确认完整环境 ID 匿名开关 → 强刷全绿 → pnpm build → git commit。
+- 本批落盘纪律：仅文档追加，**未 build、未 commit、未改 src**。
+
 ## §5 协同与回执状态（三协同审核闭环）
 
 - 最近 →粘WB/CB 块：2026-10-19 快照（§1–§3 全量覆写 + notes/00_decisions.md 新建 + 00_notes.md 建壳 status:seed）

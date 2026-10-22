@@ -285,3 +285,24 @@ DEC-24：会话骨架草稿，未独立落盘，语义并入全局骨架备忘�
 **不占号说明**: ADR-09 已被「视觉零漂移判据修正」占用，本决策顺延为 ADR-11。
 
 > 落地实测（WB 回源核 · 2026-10-22）：新环境 `nancy-bookstore-prod-d4ab5d04b10`（个人版·ap-shanghai·**2026-11-22 到期**）· `wrongs` 表 **16 列**、RLS **4 条策略**、`relrowsecurity=true`（实测 cols=16 / policies=4 / rls=true）· 托管 **29 文件**、域名 200、产物指纹 `index-CVOhJrFG.js` / `index-B_fmRRmj.css` 与旧环境**同指纹**。
+
+---
+
+## DEC-2026-10-22-ADR12 · 错题本归因本地兜底+存储版本号
+
+**WHAT**：WrongsView 归因（wrongType）走独立本地镜像 ATTR_KEY，云端写失败降级不抛红；存储层引入 v1.0.0 版本键占位，为后续结构升级留迁移退路。
+
+**WHY**：跳过匿名登录后云端写被 RLS 拦截，归因刷新即丢；版本键避免未来改结构时旧数据无法兼容。
+
+**HOW**：
+- setAttribution 云端分支外包 try/catch + 必写 localStorage；
+- loadLiveWrongs 末尾 applyAttrMirror 按 familyId 补值；
+- onMounted 首行 checkStorageVersion；
+- 三键（wrongs.live / attributions.live / storage.version）独立分区；
+- 纯 localStorage 无新依赖。
+
+**边界**：不动 wrongs 兜底六点、不动 db.ts、不动云端规则、不删旧数据。
+
+> 落地实测（WB 回源核 · 2026-10-22）：commit `7ee57e5`「refactor: 方向3&4 归因本地兜底+存储版本号(v1.0.0)」已提交并部署；源码实测 `ATTR_KEY='nancy-bookhouse.attributions.live'` · `VERSION_KEY='nancy-bookhouse.storage.version'` · `CURRENT_VERSION='v1.0.0'` · `checkStorageVersion()` 于 onMounted 首行调用 · `applyAttrMirror(familyId)` 挂 loadLiveWrongs 末尾 · setAttribution 云端分支已带 try/catch（失败仅 warn(e.message)）。
+> 已知小异常：`this.q.eq is not a function`（云端归因写路径 SDK 构造器不兼容，不阻塞，本地镜像已接管）。
+> 编号：ADR07~ADR11 已占用，本条顺延为 **ADR-12**，不重号。
