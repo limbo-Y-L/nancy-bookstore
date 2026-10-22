@@ -43,6 +43,20 @@ export default defineConfig({
       '@': resolve(projectRoot, 'src')
     }
   },
+  // 方向5 · SDK 拆包：@cloudbase/js-sdk 独立 chunk，主包回退到 ~130KB。
+  // 说明：SDK 仅被 src/lib/cloudbase.ts 顶层静态引入；cbApp 需保持同步导出
+  // （视图层/WrongsView、useOcr 均同步使用），故用 manualChunks 拆包，
+  // 而非改 cloudbase.ts 为动态 import——后者会破坏不可改视图层的同步 cbApp 用法，
+  // 且真正懒加载需把 cloudbase.ts 也改动态 import（须动 .vue，越红线）。
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          cloudbase: ['@cloudbase/js-sdk']
+        }
+      }
+    }
+  },
   plugins: [
     vue(),
     VitePWA({
